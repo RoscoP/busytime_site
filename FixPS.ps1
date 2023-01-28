@@ -1,0 +1,1 @@
+$env:path += ';C:\Program Files\nodejs\'
