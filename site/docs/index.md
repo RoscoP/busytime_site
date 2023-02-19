@@ -4,13 +4,14 @@ slug: /
 
 # BusyTime
 
-BusyTime is a light for showing when you are busy. 
+BusyTime is a light displaying your busy status according to your selected [Google Calendar](https://calendar.google.com).  It plugs into a [USB-C](https://en.wikipedia.org/wiki/USB-C) for power and produces a light to indicate when the calendar indicates it is busy.
 
-It uses [Google Calendar](https://calendar.google.com) API to update the color of a [USB-C](https://en.wikipedia.org/wiki/USB-C) light to indicate when a calendar is busy.
+Setup requires a PC with USB connection to the USB-C port on the device.  Operation after setup only requires USB-C power.
 
-<svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#ff0000"/></svg> Busy  <BR/>
-<svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#ffff00"/></svg> Busy time is coming up  <BR/>
 <svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#00ff00"/></svg> Free  <BR/>
+<svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#ffff00"/></svg> Busy time is coming up  <BR/>
+<svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#ff8800"/></svg> Busy (and another Busy is coming up)  <BR/>
+<svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#ff0000"/></svg> Busy  <BR/>
 <svg width="20" height="20" role="img" version="1.1" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" fill="#a000a0"/></svg> All day  <BR/>
 <svg width="20" height="20">
     <rect width="20" height="20">

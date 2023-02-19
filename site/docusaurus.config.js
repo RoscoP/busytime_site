@@ -70,11 +70,8 @@ const config = {
             label: 'Hardware',
           },
           {to: '/guide', label: 'Guide', position: 'left'},
-          {
-            href: 'https://github.com/RoscoP/busytime_site',
-            label: 'GitHub',
-            position: 'right',
-          },
+          {to: '/privacy', label: 'Privacy', position: 'right'},
+          {to: '/terms', label: 'Terms', position: 'right'},
         ],
       },
       footer: {
