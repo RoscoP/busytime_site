@@ -54,13 +54,13 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/stoplight.png',
+      image: 'img/busytime.png',
       sidebar: { hidable: true, autoCollapseCategories: true, pagination_prev: null, pagination_next: null },
       navbar: {
         title: 'BusyTime',
         logo: {
           alt: 'BusyTime Logo',
-          src: 'img/stoplight.png',
+          src: 'img/busytime.png',
         },
         items: [
           {
