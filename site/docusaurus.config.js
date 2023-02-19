@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'BusyTime',
   tagline: 'Lights for Busy Times',
-  favicon: 'img/stoplight.ico',
+  favicon: 'img/busytime.ico',
 
   // Set the production url of your site here
   url: 'https://roscop.github.io',
