@@ -8,7 +8,7 @@ This Policy applies to all users, visitors, or others who use and access the Ser
 ## The information we collect on the Service:
 BusyTime "Services" do not collect or store any "pesronally identifiable" information.
 
-BusyTime "Services" will ask and retain your permission for accessing data on 3rd party services.  These 3rd party services may by provided by multiple companies depending on which ones you elect to participate in.  Examples of these services providers might include Google Calendar API.
+BusyTime "Services" will ask and retain your permission for accessing data on 3rd party services.  These 3rd party services may be provided by multiple companies depending on which ones you elect to participate in.  Examples of these services providers might include Google Calendar API.
 
 BusyTime does not have access to user data exchanged bewteen the User and the Service, including but not limited to calendar events, settings, or tasks.  Through a dashboard made available by the Service Provider, BusyTime has access to aggregated and summarized analytical information about the use of the Service, such as total number of requests by all users or rate of errors.
 
