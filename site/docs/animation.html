@@ -1,0 +1,43 @@
+
+<HEAD>
+    <STYLE>
+        .eye-animation {
+            width: 25%;
+            height: 100%;
+            background-image: url('images/line.png');
+            background-size: 100%, 100%;
+            background-repeat:no-repeat;
+          
+            animation-name: eye-fill;
+            animation-duration: 5s;
+            animation-timing-function: steps(50);
+            animation-iteration-count: infinite;
+          
+            position: absolute;
+            left: 0;
+            top: 0;
+          
+            &__wrapper {
+              overflow: hidden;
+              position: relative;
+              width: 300px;
+              height: 300px;
+            }
+          }
+          
+          @keyframes eye-fill {
+            from { 
+              transform: translateY(0); 
+            }
+            to { 
+              transform: translateY(50%); 
+            }
+          }
+    </STYLE>
+</HEAD>
+
+
+<div class="eye-animation__wrapper">
+    <img src="images/calendar.png">
+    <div class="eye-animation"></div>
+</div>

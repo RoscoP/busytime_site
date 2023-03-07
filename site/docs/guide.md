@@ -19,8 +19,8 @@
 * **WiFi:** WiFi name to connect to.
 * **WiFi Password:** WiFi password to use.
 * **Calendar ID:** Name/ID of the google calendar to use for showing BusyTime.
-* **Calendar Time Zone:** Timezone of the calendar.
 * **Work Start Hour:** Hour to start reporting BusyTime (24hour).
 * **Work End Hour:** Hour to stop reporting BusyTime (24hour).
 * **Yellow Time:** Number of minutes to show Yellow light before a BusyTime.
 * **Work Days:** Days of the week to check for BusyTime.
+* **Brightness:** Brightness of the light, on a scale of 0-100
