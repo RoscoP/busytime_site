@@ -1,6 +1,6 @@
 {
   "name": "site",
-  "version": "0.2.0",
+  "version": "0.4.1",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
@@ -23,7 +23,8 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.9.2"
+    "@docusaurus/module-type-aliases": "3.9.2",
+    "raw-loader": "^4.0.2"
   },
   "browserslist": {
     "production": [

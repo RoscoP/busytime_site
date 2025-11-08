@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Complete</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .status.processing {
+            background: #bee3f8;
+            color: #1e4e8c;
+            border-left: 4px solid #3182ce;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .close-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authorization</h1>
+        <div class="status processing" id="status">
+            <div class="loader"></div>
+            <p>Processing authorization...</p>
+        </div>
+        <p class="close-note" id="closeNote" style="display: none;">
+            You can close this window now.
+        </p>
+    </div>
+
+    <script src="lib/env.js"></script>
+    <script>
+        // Configuration - using ENV_CONFIG from env.js
+        const GOOGLE_CONFIG = {
+            clientId: (window.ENV_CONFIG && window.ENV_CONFIG.googleClientId) || '',
+            clientTerces: (window.ENV_CONFIG && window.ENV_CONFIG.googleClientTerces) || '',
+            get clientSecret() {
+                return window.ENV_CONFIG && window.ENV_CONFIG.decodeValue ? window.ENV_CONFIG.decodeValue(this.clientTerces) : '';
+            },
+            redirectUri: window.location.origin + '/oauth-callback.html',
+            tokenEndpoint: 'https://oauth2.googleapis.com/token'
+        };
+
+        const OUTLOOK_CONFIG = {
+            clientId: (window.ENV_CONFIG && window.ENV_CONFIG.outlookClientId) || '',
+            clientTerces: (window.ENV_CONFIG && window.ENV_CONFIG.outlookClientTerces) || '',
+            get clientSecret() {
+                return window.ENV_CONFIG && window.ENV_CONFIG.decodeValue ? window.ENV_CONFIG.decodeValue(this.clientTerces) : '';
+            },
+            redirectUri: window.location.origin + '/oauth-callback.html',
+            tokenEndpoint: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+            scope: 'https://graph.microsoft.com/Calendars.Read offline_access'
+        };
+
+        // Determine which provider this callback is for based on saved state
+        function detectProvider() {
+            const googleState = window.opener && window.opener.sessionStorage.getItem('oauth_state');
+            const outlookState = window.opener && window.opener.sessionStorage.getItem('outlook_oauth_state');
+            const urlParams = new URLSearchParams(window.location.search);
+            const state = urlParams.get('state');
+            
+            if (state === outlookState && outlookState) {
+                return 'outlook';
+            } else if (state === googleState && googleState) {
+                return 'google';
+            }
+            
+            // Fallback: if there's a code verifier, it's Outlook (uses PKCE)
+            const codeVerifier = window.opener && window.opener.sessionStorage.getItem('outlook_code_verifier');
+            if (codeVerifier) {
+                return 'outlook';
+            }
+            
+            return 'google'; // Default to Google for backward compatibility
+        }
+
+        // Handle the OAuth callback
+        async function handleCallback() {
+            const provider = detectProvider();
+            
+            if (provider === 'outlook') {
+                await handleOutlookCallback();
+            } else {
+                await handleGoogleCallback();
+            }
+        }
+
+        // Handle Google OAuth callback
+        async function handleGoogleCallback() {
+            const statusDiv = document.getElementById('status');
+            const closeNote = document.getElementById('closeNote');
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const state = urlParams.get('state');
+
+            if (!statusDiv) return;
+
+            // Handle error from OAuth provider
+            if (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p><strong>❌ Authorization Failed</strong></p><p>${error}</p>`;
+                closeNote.style.display = 'block';
+                
+                // Send error to parent window
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'GOOGLE_OAUTH_ERROR',
+                        error: error
+                    }, window.location.origin);
+                }
+                return;
+            }
+
+            // Handle missing code
+            if (!code) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p><strong>❌ No Authorization Code</strong></p><p>Missing authorization code from Google.</p>';
+                closeNote.style.display = 'block';
+                return;
+            }
+
+            // Verify state
+            const savedState = window.opener && window.opener.sessionStorage.getItem('oauth_state');
+            if (!state || state !== savedState) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p><strong>❌ Security Error</strong></p><p>Invalid state parameter. Possible CSRF attack.</p>';
+                closeNote.style.display = 'block';
+                
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'GOOGLE_OAUTH_ERROR',
+                        error: 'Invalid state parameter'
+                    }, window.location.origin);
+                }
+                return;
+            }
+
+            // Exchange code for tokens
+            try {
+                const params = new URLSearchParams({
+                    code: code,
+                    client_id: GOOGLE_CONFIG.clientId,
+                    client_secret: GOOGLE_CONFIG.clientSecret,
+                    redirect_uri: GOOGLE_CONFIG.redirectUri,
+                    grant_type: 'authorization_code'
+                });
+
+                const response = await fetch(GOOGLE_CONFIG.tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || data.error || 'Token exchange failed');
+                }
+
+                // Success! Send tokens to parent window
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '<p><strong>✅ Authorization Complete!</strong></p><p>Returning to main window...</p>';
+                closeNote.style.display = 'block';
+
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'GOOGLE_OAUTH_SUCCESS',
+                        tokens: {
+                            access_token: data.access_token,
+                            refresh_token: data.refresh_token,
+                            token_type: data.token_type,
+                            expires_in: data.expires_in,
+                            scope: data.scope
+                        }
+                    }, window.location.origin);
+
+                    // Close window after a short delay
+                    setTimeout(() => {
+                        window.close();
+                    }, 1500);
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '<p><strong>⚠ Parent Window Not Found</strong></p><p>Please close this window and try again.</p>';
+                    closeNote.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Token exchange error:', error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p><strong>❌ Token Exchange Failed</strong></p><p>${error instanceof Error ? error.message : 'Unknown error'}</p>`;
+                closeNote.style.display = 'block';
+
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'GOOGLE_OAUTH_ERROR',
+                        error: error instanceof Error ? error.message : 'Token exchange failed'
+                    }, window.location.origin);
+                }
+            }
+        }
+
+        // Handle Outlook OAuth callback
+        async function handleOutlookCallback() {
+            const statusDiv = document.getElementById('status');
+            const closeNote = document.getElementById('closeNote');
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+            const state = urlParams.get('state');
+
+            if (!statusDiv) return;
+
+            // Handle error from OAuth provider
+            if (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p><strong>❌ Authorization Failed</strong></p><p>${error}</p>${errorDescription ? `<p>${errorDescription}</p>` : ''}`;
+                closeNote.style.display = 'block';
+                
+                // Send error to parent window
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'OUTLOOK_OAUTH_ERROR',
+                        error: error,
+                        errorDescription: errorDescription
+                    }, window.location.origin);
+                }
+                return;
+            }
+
+            // Handle missing code
+            if (!code) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p><strong>❌ No Authorization Code</strong></p><p>Missing authorization code from Microsoft.</p>';
+                closeNote.style.display = 'block';
+                return;
+            }
+
+            // Verify state
+            const savedState = window.opener && window.opener.sessionStorage.getItem('outlook_oauth_state');
+            if (!state || state !== savedState) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p><strong>❌ Security Error</strong></p><p>Invalid state parameter. Possible CSRF attack.</p>';
+                closeNote.style.display = 'block';
+                
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'OUTLOOK_OAUTH_ERROR',
+                        error: 'Invalid state parameter'
+                    }, window.location.origin);
+                }
+                return;
+            }
+
+            // Get the code verifier from parent window (PKCE)
+            const codeVerifier = window.opener && window.opener.sessionStorage.getItem('outlook_code_verifier');
+            if (!codeVerifier) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p><strong>❌ PKCE Error</strong></p><p>Code verifier not found.</p>';
+                closeNote.style.display = 'block';
+                
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'OUTLOOK_OAUTH_ERROR',
+                        error: 'Code verifier not found'
+                    }, window.location.origin);
+                }
+                return;
+            }
+
+            // Exchange code for tokens using PKCE
+            try {
+                const params = new URLSearchParams({
+                    code: code,
+                    client_id: OUTLOOK_CONFIG.clientId,
+                    redirect_uri: OUTLOOK_CONFIG.redirectUri,
+                    grant_type: 'authorization_code',
+                    code_verifier: codeVerifier  // PKCE parameter
+                });
+
+                // Note: SPA apps don't use client_secret with PKCE
+                const response = await fetch(OUTLOOK_CONFIG.tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error_description || data.error || 'Token exchange failed');
+                }
+
+                // Success! Send tokens to parent window
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '<p><strong>✅ Authorization Complete!</strong></p><p>Returning to main window...</p>';
+                closeNote.style.display = 'block';
+
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'OUTLOOK_OAUTH_SUCCESS',
+                        tokens: {
+                            access_token: data.access_token,
+                            refresh_token: data.refresh_token,
+                            token_type: data.token_type,
+                            expires_in: data.expires_in,
+                            scope: data.scope
+                        }
+                    }, window.location.origin);
+
+                    // Close window after a short delay
+                    setTimeout(() => {
+                        window.close();
+                    }, 1500);
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '<p><strong>⚠ Parent Window Not Found</strong></p><p>Please close this window and try again.</p>';
+                    closeNote.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Token exchange error:', error);
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `<p><strong>❌ Token Exchange Failed</strong></p><p>${error instanceof Error ? error.message : 'Unknown error'}</p>`;
+                closeNote.style.display = 'block';
+
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'OUTLOOK_OAUTH_ERROR',
+                        error: error instanceof Error ? error.message : 'Token exchange failed'
+                    }, window.location.origin);
+                }
+            }
+        }
+
+        // Start handling the callback when page loads
+        window.addEventListener('load', handleCallback);
+    </script>
+</body>
+</html>

@@ -3,15 +3,6 @@
 const { github } = require('prism-react-renderer');
 const { dracula } = require('prism-react-renderer');
 
-module.exports = {
-  // ... other config options ...
-  themeConfig: {
-    prism: {
-      theme: github, // Use your desired theme here
-    }
-  }
-};
-
 const lightCodeTheme = github;
 const darkCodeTheme = dracula;
 
@@ -32,8 +23,12 @@ const config = {
   organizationName: 'RoscoP', // Usually your GitHub org/user name.
   projectName: 'busytime_site', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn'
+    }
+  },
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -78,13 +73,7 @@ const config = {
           src: 'img/busytime.png',
         },
         items: [
-          {
-            type: 'doc',
-            docId: 'hardware',
-            position: 'left',
-            label: 'Hardware',
-          },
-          {to: '/guide', label: 'Guide', position: 'left'},
+          {to: '/configure', label: 'Configure', position: 'left'},
           {to: '/privacy', label: 'Privacy', position: 'right'},
           {to: '/terms', label: 'Terms', position: 'right'},
         ],
