@@ -73,6 +73,7 @@ const config = {
           src: 'img/busytime.png',
         },
         items: [
+          {to: '/guide', label: 'Guide', position: 'left'},
           {to: '/configure', label: 'Configure', position: 'left'},
           {to: '/privacy', label: 'Privacy', position: 'right'},
           {to: '/terms', label: 'Terms', position: 'right'},

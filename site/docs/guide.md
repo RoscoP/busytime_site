@@ -1,26 +1,19 @@
 # BusyTime Setup Guide
 
-## Authorize google to access you calendar
-1. The **Google Code** will be Red to indicate that you need to authorize google permissions in order to continue.  
-![SetupAuthorized](images/SetupUnauthorized.png)
-1. Click **Authorize**
-1. The **Google Code** wwill turn Yellow while it waits for you to complete the authorization.  
-![SetupAuthWaiting](images/SetupAuthWaiting.png)
-1. Setup will generate a code and place it in **Google Code** and copy it into the clipboard.
-1. A browser will start up seeking permissions to your google account.
-1. Paste the code into the form brought up in the web browser.  
-![GoogleEnterCode](images/GoogleEnterCode.png)
-1. Click through dialogs to give permissions.
-1. Once permission is granted successfully return to setup
-1. The **Google Code** section will turn green indicating success.  
-![SetupAuthorized](images/SetupAuthorized.png)
+## How to connect BusyTime to a work calendar
+Work calendars will often be limited on what programs can access them.  This can usually be worked around by sharing a limited view of the calendar with your personal account.
 
-## Configure BusyTime
-* **WiFi:** WiFi name to connect to.
-* **WiFi Password:** WiFi password to use.
-* **Calendar ID:** Name/ID of the google calendar to use for showing BusyTime.
-* **Work Start Hour:** Hour to start reporting BusyTime (24hour).
-* **Work End Hour:** Hour to stop reporting BusyTime (24hour).
-* **Yellow Time:** Number of minutes to show Yellow light before a BusyTime.
-* **Work Days:** Days of the week to check for BusyTime.
-* **Brightness:** Brightness of the light, on a scale of 0-100
+### Google
+1. [Google Calendar](https://calendar.google.com)
+1. Click **Settings Gear** -> **Settings**
+1. <img src="/img/CalendarSettings.png" alt="CalendarSettings" width="640" />
+1. Click **Calendar Name** (BusyTime in this example)
+1. <img src="/img/CalendarSelect.png" alt="CalendarSelect" width="640" />
+1. Click **Shared with** -> **Add people and groups**
+1. <img src="/img/CalendarShare.png" alt="CalendarShare" width="640" />
+1. Enter in your *personal* gmail address
+1. <img src="/img/CalendarShareWithEmail.png" alt="CalendarShareWithEmail" width="640" />
+1. Check your email and accept the calendar
+1. <img src="/img/EmailAcceptShare.png" alt="EmailAcceptShare" width="640" />
+1. It will now be selectable when configuring BusyTime
+1. See Google's [Share your calendar with someone](https://support.google.com/calendar/answer/37082)
