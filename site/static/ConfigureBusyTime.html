@@ -3126,7 +3126,7 @@ window.ENV_CONFIG = {
     get outlookClientId() {
         return decodeValue('HElPG0wfGEkHTExMTgceSEscBxIZThgHT0waSxkaHxwcSBkS');
     },
-    outlookClientTerces: '',
+    outlookClientTerces: 'eRhCEntUT1kHY0xBQWBMQ35lcAdfHnJYbkRYR3NoZEZTHW5Ja0hHYQ==',
     decodeValue: decodeValue
 };
 //# sourceMappingURL=env.js.map
@@ -5422,7 +5422,24 @@ const outlookAuthState = {
     pollTimeout: 120
 };
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
+// Using a combination of DOMContentLoaded and a ready check to avoid race conditions
+let isInitialized = false;
+function initializeApp() {
+    // Prevent double initialization
+    if (isInitialized) {
+        return;
+    }
+    // Check if critical elements exist before initializing
+    const newConfigButton = document.getElementById('new-config');
+    const loadExistingButton = document.getElementById('load-existing');
+    if (!newConfigButton || !loadExistingButton) {
+        // Elements not ready yet, retry after a short delay
+        console.log('BusyTime: Buttons not ready, retrying initialization...');
+        setTimeout(initializeApp, 50);
+        return;
+    }
+    isInitialized = true;
+    console.log('BusyTime: Initializing application...');
     setupUI();
     setupOAuthHandlers();
     setupInitialChoiceHandlers();
@@ -5436,6 +5453,22 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             saveConfiguration(currentConfig);
         });
+    }
+    console.log('BusyTime: Application initialized successfully');
+}
+// Initialize when DOM is ready - use multiple strategies for compatibility
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+}
+else {
+    // DOM is already ready, initialize immediately
+    initializeApp();
+}
+// Also try with window.load as a fallback for some environments
+window.addEventListener('load', () => {
+    if (!isInitialized) {
+        console.log('BusyTime: Initializing via window load event');
+        initializeApp();
     }
 });
 // UI Setup
@@ -5454,6 +5487,12 @@ function setupInitialChoiceHandlers() {
     const loadExistingButton = document.getElementById('load-existing');
     const restartButton = document.getElementById('restart-button');
     const hiddenFileInput = document.getElementById('load-config');
+    console.log('BusyTime: Setting up initial choice handlers', {
+        newConfigButton: !!newConfigButton,
+        loadExistingButton: !!loadExistingButton,
+        restartButton: !!restartButton,
+        hiddenFileInput: !!hiddenFileInput
+    });
     if (newConfigButton) {
         newConfigButton.addEventListener('click', handleNewConfigChoice);
     }
@@ -5470,6 +5509,35 @@ function setupInitialChoiceHandlers() {
     if (hiddenFileInput) {
         hiddenFileInput.addEventListener('change', handleFileLoadChoice);
     }
+    // Add event delegation as backup for Docusaurus or other dynamic environments
+    // This ensures clicks work even if direct handlers fail to attach
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        // Handle new-config button click via delegation
+        if (target.id === 'new-config' || target.closest('#new-config')) {
+            console.log('BusyTime: New config clicked via delegation');
+            e.preventDefault();
+            handleNewConfigChoice();
+            return;
+        }
+        // Handle load-existing button click via delegation
+        if (target.id === 'load-existing' || target.closest('#load-existing')) {
+            console.log('BusyTime: Load existing clicked via delegation');
+            e.preventDefault();
+            const fileInput = document.getElementById('load-config');
+            if (fileInput) {
+                fileInput.click();
+            }
+            return;
+        }
+        // Handle restart button click via delegation
+        if (target.id === 'restart-button' || target.closest('#restart-button')) {
+            console.log('BusyTime: Restart clicked via delegation');
+            e.preventDefault();
+            restartApplication();
+            return;
+        }
+    }, { capture: true }); // Use capture phase to ensure we get the event first
 }
 function handleNewConfigChoice() {
     // Create new configuration with defaults
