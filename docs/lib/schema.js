@@ -835,6 +835,16 @@ const schema = {
                         }
                     },
                     description: 'WLED server display'
+                },
+                website: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            description: 'Optional name for the website/server'
+                        }
+                    },
+                    description: 'Website display - optional server name only'
                 }
             }
         },
