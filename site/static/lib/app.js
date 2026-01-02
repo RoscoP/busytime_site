@@ -11,7 +11,8 @@ const availableDisplays = {
     'bigstoplight': 'Big Stoplight',
     'console': 'Console Output',
     'homeassistant': 'Home Assistant',
-    'wled': 'WLED Display'
+    'wled': 'WLED Display',
+    'website': 'Website Display'
 };
 // Default colors for display states
 const defaultStateColors = {
@@ -544,6 +545,10 @@ function renderDisplaySettings(container, displayKey, displayData, isDefault = f
         }
         else if (displayKey === 'wled') {
             const tooltip = createTooltipWithLink('WLED is a fast and feature-rich implementation of an ESP8266/ESP32 webserver to control NeoPixel (WS2812B, WS2811, SK6812) LEDs.', 'https://kno.wled.ge/');
+            titleContainer.appendChild(tooltip);
+        }
+        else if (displayKey === 'website') {
+            const tooltip = createTooltipWithLink('Website display: render device status on a web page. Configure endpoint and options in this display.', 'http://busytime.local');
             titleContainer.appendChild(tooltip);
         }
     }
@@ -1160,7 +1165,7 @@ function renderForm(container, data) {
     }
     // Create compact settings group
     container.appendChild(createCompactSettingsGroup(data));
-    // Create form elements for remaining properties  
+    // Create form elements for remaining properties
     Object.entries(schema.properties).forEach(([key, prop]) => {
         // Skip displays, wifis, calendars and properties we handled above
         if (key === 'displays' || key === 'wifis' || key === 'calendars' ||
