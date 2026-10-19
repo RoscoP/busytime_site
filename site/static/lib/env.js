@@ -24,7 +24,7 @@ window.ENV_CONFIG = {
     get outlookClientDi() {
         return decodeValue('HElPG0wfGEkHTExMTgceSEscBxIZThgHT0waSxkaHxwcSBkS');
     },
-    outlookClientTerces: 'eRhCEntUT1kHY0xBQWBMQ35lcAdfHnJYbkRYR3NoZEZTHW5Ja0hHYQ==',
+    outlookClientTerces: '',
     decodeValue: decodeValue
 };
 //# sourceMappingURL=env.js.map
