@@ -28,7 +28,7 @@ Apple Calendar can be accessed through CalDAV authentication, which requires an 
 1. Under **App-Specific Passwords**, click **Genverate Password** ([*details*](https://support.apple.com/en-us/102654))
 1. Enter a label (e.g., "BusyTime") and click **Create**
 1. Copy the generated app-specific password
-1. On the [configure](configure.md) page, select **Configure Apple Calendar**
+1. On the [configure](configure) page, select **Configure Apple Calendar**
 1. Enter your iCloud email address as the username
 1. Use the app-specific password you just generated
 1. Enter in the names of the calendars you want to track

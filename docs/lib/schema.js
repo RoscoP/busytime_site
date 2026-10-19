@@ -1,946 +1,604 @@
 "use strict";
-// Schema definition for BusyTime configuration
-// Uses JSON Schema specification for validation and form generation
-// Custom form rendering implemented in app.ts
-const schema = {
-    type: 'object',
-    properties: {
-        wifis: {
-            type: 'object',
-            additionalProperties: {
-                type: 'string',
-                description: 'WiFi password'
+const SETTINGS_SCHEMA = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "BusyTime settings.json",
+    "description": "Validates a BusyTime settings.json file. Unknown/extra properties are allowed anywhere (forward-compatible, catches nothing beyond what's modeled here).",
+    "type": "object",
+    "additionalProperties": true,
+    "$defs": {
+        "rgbColor": {
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255
             },
-            description: 'WiFi access point configurations',
-            default: {}
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "RGB color as [r, g, b], each 0-255"
         },
-        test_mode: {
-            type: ['string', 'null'],
-            enum: [null, 'lights', 'calendar'],
-            enumNames: ['None', 'Lights', 'Calendar'],
-            description: 'Test mode configuration',
-            default: null
+        "stateName": {
+            "type": "string",
+            "enum": [
+                "NONE",
+                "TESTING",
+                "SETUP",
+                "WAITING",
+                "ERROR",
+                "IDLE",
+                "FREE",
+                "POSSIBLE",
+                "PENDING",
+                "BUSYPENDING",
+                "BUSY"
+            ]
         },
-        calendar_hour_start: {
-            type: 'integer',
-            minimum: 0,
-            maximum: 23,
-            description: 'Start hour for calendar monitoring',
-            format: 'time',
-            default: 8
-        },
-        calendar_hour_end: {
-            type: 'integer',
-            minimum: 1,
-            maximum: 24,
-            description: 'End hour for calendar monitoring',
-            format: 'time',
-            default: 18
-        },
-        calendar_days: {
-            type: 'array',
-            items: {
-                type: 'integer',
-                enum: [0, 1, 2, 3, 4, 5, 6],
-                enumNames: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        "colorsOverride": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "NONE": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "TESTING": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "SETUP": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "WAITING": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "ERROR": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "IDLE": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "FREE": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "POSSIBLE": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "PENDING": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "BUSYPENDING": {
+                    "$ref": "#/$defs/rgbColor"
+                },
+                "BUSY": {
+                    "$ref": "#/$defs/rgbColor"
+                }
             },
-            description: 'Days of the week to monitor',
-            default: [0, 1, 2, 3, 4]
+            "description": "Per-state color overrides, applied on top of the built-in defaults"
         },
-        pending_time: {
-            type: 'integer',
-            minimum: 0,
-            description: 'Yellow warning time in minutes',
-            default: 10
-        },
-        displays: {
-            type: 'object',
-            properties: {
-                default: {
-                    type: 'object',
-                    properties: {
-                        brightness: {
-                            type: 'number',
-                            minimum: 0,
-                            maximum: 1,
-                            description: 'Default brightness level (0.0 - 1.0)',
-                            default: 1.0
+        "eventTimeColorEntry": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "state": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/stateName"
                         },
-                        use_calendar_colors: {
-                            type: 'boolean',
-                            description: 'Use colors from the calendar for the busy color',
-                            default: false
-                        },
-                        colors: {
-                            type: 'object',
-                            properties: {
-                                NONE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for NONE state'
-                                },
-                                TESTING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for TESTING state'
-                                },
-                                SETUP: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for SETUP state'
-                                },
-                                WAITING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for WAITING state'
-                                },
-                                ERROR: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for ERROR state'
-                                },
-                                IDLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for IDLE state'
-                                },
-                                FREE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for FREE state'
-                                },
-                                POSSIBLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for POSSIBLE state'
-                                },
-                                PENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for PENDING state'
-                                },
-                                BUSYPENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSYPENDING state'
-                                },
-                                BUSY: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSY state'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Optional color overrides for display states'
-                        },
-                        event_time_color: {
-                            type: 'object',
-                            properties: {
-                                '1': {
-                                    type: 'object',
-                                    properties: {
-                                        state: {
-                                            type: ['string', 'null'],
-                                            enum: [null, 'NONE', 'TESTING', 'SETUP', 'WAITING', 'ERROR', 'IDLE', 'FREE', 'POSSIBLE', 'PENDING', 'BUSYPENDING', 'BUSY'],
-                                            description: 'State override for events whose minute ends with 1 (null = use natural event state)',
-                                            default: null
-                                        },
-                                        color: {
-                                            type: ['array', 'null'],
-                                            items: { type: 'integer', minimum: 0, maximum: 255 },
-                                            minItems: 3,
-                                            maxItems: 3,
-                                            description: 'Color override for events whose minute ends with 1 (null = use default event time color)',
-                                            default: null
-                                        }
-                                    },
-                                    additionalProperties: false,
-                                    description: 'Configuration for events whose minute ends with 1'
-                                },
-                                '2': {
-                                    type: 'object',
-                                    properties: {
-                                        state: {
-                                            type: ['string', 'null'],
-                                            enum: [null, 'NONE', 'TESTING', 'SETUP', 'WAITING', 'ERROR', 'IDLE', 'FREE', 'POSSIBLE', 'PENDING', 'BUSYPENDING', 'BUSY'],
-                                            description: 'State override for events whose minute ends with 2 (null = use natural event state)',
-                                            default: null
-                                        },
-                                        color: {
-                                            type: ['array', 'null'],
-                                            items: { type: 'integer', minimum: 0, maximum: 255 },
-                                            minItems: 3,
-                                            maxItems: 3,
-                                            description: 'Color override for events whose minute ends with 2 (null = use default event time color)',
-                                            default: null
-                                        }
-                                    },
-                                    additionalProperties: false,
-                                    description: 'Configuration for events whose minute ends with 2'
-                                },
-                                '3': {
-                                    type: 'object',
-                                    properties: {
-                                        state: {
-                                            type: ['string', 'null'],
-                                            enum: [null, 'NONE', 'TESTING', 'SETUP', 'WAITING', 'ERROR', 'IDLE', 'FREE', 'POSSIBLE', 'PENDING', 'BUSYPENDING', 'BUSY'],
-                                            description: 'State override for events whose minute ends with 3 (null = use natural event state)',
-                                            default: null
-                                        },
-                                        color: {
-                                            type: ['array', 'null'],
-                                            items: { type: 'integer', minimum: 0, maximum: 255 },
-                                            minItems: 3,
-                                            maxItems: 3,
-                                            description: 'Color override for events whose minute ends with 3 (null = use default event time color)',
-                                            default: null
-                                        }
-                                    },
-                                    additionalProperties: false,
-                                    description: 'Configuration for events whose minute ends with 3'
-                                },
-                                '4': {
-                                    type: 'object',
-                                    properties: {
-                                        state: {
-                                            type: ['string', 'null'],
-                                            enum: [null, 'NONE', 'TESTING', 'SETUP', 'WAITING', 'ERROR', 'IDLE', 'FREE', 'POSSIBLE', 'PENDING', 'BUSYPENDING', 'BUSY'],
-                                            description: 'State override for events whose minute ends with 4 (null = use natural event state)',
-                                            default: null
-                                        },
-                                        color: {
-                                            type: ['array', 'null'],
-                                            items: { type: 'integer', minimum: 0, maximum: 255 },
-                                            minItems: 3,
-                                            maxItems: 3,
-                                            description: 'Color override for events whose minute ends with 4 (null = use default event time color)',
-                                            default: null
-                                        }
-                                    },
-                                    additionalProperties: false,
-                                    description: 'Configuration for events whose minute ends with 4'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Event time color and state overrides based on minute ending. Properties only exist when explicitly configured'
+                        {
+                            "type": "null"
                         }
-                    },
-                    description: 'Default settings that apply to all displays unless overridden',
-                    default: {
-                        brightness: 1.0,
-                        use_calendar_colors: false
-                    }
+                    ],
+                    "default": null,
+                    "description": "State override for matching events (null = use the event's natural state)"
                 },
-                bigstoplight: {
-                    type: 'object',
-                    properties: {
-                        brightness: {
-                            type: 'number',
-                            minimum: 0,
-                            maximum: 1,
-                            description: 'Brightness level override (0.0 - 1.0)'
+                "color": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/rgbColor"
                         },
-                        url: {
-                            type: 'string',
-                            format: 'uri',
-                            description: 'URL for big stoplight API'
+                        {
+                            "type": "null"
                         }
-                    },
-                    description: 'Big physical stoplight controlled with Raspberry Pi Pico 2w'
-                },
-                console: {
-                    type: 'object',
-                    properties: {
-                        colors: {
-                            type: 'object',
-                            properties: {
-                                NONE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for NONE state'
-                                },
-                                TESTING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for TESTING state'
-                                },
-                                SETUP: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for SETUP state'
-                                },
-                                WAITING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for WAITING state'
-                                },
-                                ERROR: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for ERROR state'
-                                },
-                                IDLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for IDLE state'
-                                },
-                                FREE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for FREE state'
-                                },
-                                POSSIBLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for POSSIBLE state'
-                                },
-                                PENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for PENDING state'
-                                },
-                                BUSYPENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSYPENDING state'
-                                },
-                                BUSY: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSY state'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Optional color overrides for display states'
-                        },
-                        event_time_color: {
-                            type: 'object',
-                            properties: {
-                                '1': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 1 (null = use default)',
-                                    default: null
-                                },
-                                '2': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 2 (null = use default)',
-                                    default: null
-                                },
-                                '3': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 3 (null = use default)',
-                                    default: null
-                                },
-                                '4': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 4 (null = use default)',
-                                    default: null
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Event time color overrides based on minute ending. Properties only exist when explicitly configured'
-                        }
-                    },
-                    description: 'Serial output display'
-                },
-                homeassistant: {
-                    type: 'object',
-                    properties: {
-                        brightness: {
-                            type: 'number',
-                            minimum: 0,
-                            maximum: 1,
-                            description: 'Brightness level override (0.0 - 1.0)'
-                        },
-                        entity_id: {
-                            type: 'string',
-                            description: 'Home Assistant device identifier'
-                        },
-                        token: {
-                            type: 'string',
-                            description: 'Authentication token for Home Assistant server'
-                        },
-                        url: {
-                            type: 'string',
-                            format: 'uri',
-                            description: 'Home Assistant server URL'
-                        },
-                        colors: {
-                            type: 'object',
-                            properties: {
-                                NONE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for NONE state'
-                                },
-                                TESTING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for TESTING state'
-                                },
-                                SETUP: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for SETUP state'
-                                },
-                                WAITING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for WAITING state'
-                                },
-                                ERROR: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for ERROR state'
-                                },
-                                IDLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for IDLE state'
-                                },
-                                FREE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for FREE state'
-                                },
-                                POSSIBLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for POSSIBLE state'
-                                },
-                                PENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for PENDING state'
-                                },
-                                BUSYPENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSYPENDING state'
-                                },
-                                BUSY: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSY state'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Optional color overrides for display states'
-                        },
-                        event_time_color: {
-                            type: 'object',
-                            properties: {
-                                '1': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 1 (null = use default)',
-                                    default: null
-                                },
-                                '2': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 2 (null = use default)',
-                                    default: null
-                                },
-                                '3': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 3 (null = use default)',
-                                    default: null
-                                },
-                                '4': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 4 (null = use default)',
-                                    default: null
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Event time color overrides based on minute ending. Properties only exist when explicitly configured'
-                        }
-                    },
-                    description: 'Control Home Assistant device color'
-                },
-                onboard: {
-                    type: 'object',
-                    properties: {
-                        brightness: {
-                            type: 'number',
-                            minimum: 0,
-                            maximum: 1,
-                            description: 'Brightness level override (0.0 - 1.0)'
-                        },
-                        colors: {
-                            type: 'object',
-                            properties: {
-                                NONE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for NONE state'
-                                },
-                                TESTING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for TESTING state'
-                                },
-                                SETUP: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for SETUP state'
-                                },
-                                WAITING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for WAITING state'
-                                },
-                                ERROR: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for ERROR state'
-                                },
-                                IDLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for IDLE state'
-                                },
-                                FREE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for FREE state'
-                                },
-                                POSSIBLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for POSSIBLE state'
-                                },
-                                PENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for PENDING state'
-                                },
-                                BUSYPENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSYPENDING state'
-                                },
-                                BUSY: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSY state'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Optional color overrides for display states'
-                        },
-                        event_time_color: {
-                            type: 'object',
-                            properties: {
-                                '1': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 1 (null = use default)',
-                                    default: null
-                                },
-                                '2': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 2 (null = use default)',
-                                    default: null
-                                },
-                                '3': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 3 (null = use default)',
-                                    default: null
-                                },
-                                '4': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 4 (null = use default)',
-                                    default: null
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Event time color overrides based on minute ending. Properties only exist when explicitly configured'
-                        }
-                    },
-                    description: 'Onboard LED display'
-                },
-                wled: {
-                    type: 'object',
-                    properties: {
-                        brightness: {
-                            type: 'number',
-                            minimum: 0,
-                            maximum: 1,
-                            description: 'Brightness level override (0.0 - 1.0)'
-                        },
-                        url: {
-                            type: 'string',
-                            format: 'uri',
-                            description: 'Address for the WLED server JSON endpoint'
-                        },
-                        preset: {
-                            type: 'integer',
-                            minimum: 0,
-                            description: 'WLED preset to use when free instead of color'
-                        },
-                        led_count: {
-                            type: 'integer',
-                            minimum: 1,
-                            description: 'Number of LEDs to use with WLED'
-                        },
-                        show_dividers: {
-                            type: 'boolean',
-                            description: 'Show minute dividers as white LEDs'
-                        },
-                        colors: {
-                            type: 'object',
-                            properties: {
-                                NONE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for NONE state'
-                                },
-                                TESTING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for TESTING state'
-                                },
-                                SETUP: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for SETUP state'
-                                },
-                                WAITING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for WAITING state'
-                                },
-                                ERROR: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for ERROR state'
-                                },
-                                IDLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for IDLE state'
-                                },
-                                FREE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for FREE state'
-                                },
-                                POSSIBLE: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for POSSIBLE state'
-                                },
-                                PENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for PENDING state'
-                                },
-                                BUSYPENDING: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSYPENDING state'
-                                },
-                                BUSY: {
-                                    type: 'array',
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for BUSY state'
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Optional color overrides for display states'
-                        },
-                        event_time_color: {
-                            type: 'object',
-                            properties: {
-                                '1': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 1 (null = use default)',
-                                    default: null
-                                },
-                                '2': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 2 (null = use default)',
-                                    default: null
-                                },
-                                '3': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 3 (null = use default)',
-                                    default: null
-                                },
-                                '4': {
-                                    type: ['array', 'null'],
-                                    items: { type: 'integer', minimum: 0, maximum: 255 },
-                                    minItems: 3,
-                                    maxItems: 3,
-                                    description: 'RGB color for events whose minute ends with 4 (null = use default)',
-                                    default: null
-                                }
-                            },
-                            additionalProperties: false,
-                            description: 'Event time color overrides based on minute ending. Properties only exist when explicitly configured'
-                        }
-                    },
-                    description: 'WLED server display'
-                },
-                website: {
-                    type: 'object',
-                    properties: {
-                        name: {
-                            type: 'string',
-                            description: 'Optional name for the website/server'
-                        }
-                    },
-                    description: 'Website display - optional server name only'
+                    ],
+                    "default": null,
+                    "description": "Color override for matching events (null = use the default color for the state)"
                 }
             }
         },
-        calendars: {
-            type: 'object',
-            properties: {
-                google: {
-                    type: 'object',
-                    properties: {
-                        auth: {
-                            type: 'object',
-                            properties: {
-                                access_token: {
-                                    type: 'string',
-                                    description: 'Google OAuth access token'
-                                },
-                                refresh_token: {
-                                    type: 'string',
-                                    description: 'Google OAuth refresh token'
-                                }
-                            },
-                            description: 'Google OAuth authentication tokens'
-                        },
-                        calendars: {
-                            type: 'array',
-                            items: {
-                                type: 'string',
-                                format: 'email'
-                            },
-                            description: 'List of Google Calendar IDs to monitor',
-                            default: []
-                        }
-                    },
-                    description: 'Google Calendar configuration'
+        "eventTimeColorMap": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "1": {
+                    "$ref": "#/$defs/eventTimeColorEntry",
+                    "description": "Override for events ending at minute 1"
                 },
-                apple: {
-                    type: 'object',
-                    properties: {
-                        auth: {
-                            type: 'object',
-                            properties: {
-                                username: {
-                                    type: 'string',
-                                    description: 'Apple iCloud username/email'
-                                },
-                                password: {
-                                    type: 'string',
-                                    description: 'Apple iCloud App-Specific Password'
-                                }
-                            },
-                            description: 'Apple Calendar CalDAV authentication credentials'
-                        },
-                        calendars: {
-                            type: 'array',
-                            items: {
-                                type: 'string'
-                            },
-                            description: 'List of Apple Calendar names to monitor',
-                            default: []
-                        }
-                    },
-                    description: 'Apple Calendar configuration'
+                "2": {
+                    "$ref": "#/$defs/eventTimeColorEntry",
+                    "description": "Override for events ending at minute 2"
                 },
-                outlook: {
-                    type: 'object',
-                    properties: {
-                        auth: {
-                            type: 'object',
-                            properties: {
-                                access_token: {
-                                    type: 'string',
-                                    description: 'Outlook OAuth access token'
-                                },
-                                refresh_token: {
-                                    type: 'string',
-                                    description: 'Outlook OAuth refresh token'
-                                }
-                            },
-                            description: 'Outlook OAuth authentication tokens'
-                        },
-                        calendars: {
-                            type: 'array',
-                            items: {
-                                type: 'string'
-                            },
-                            description: 'List of Outlook Calendar IDs to monitor',
-                            default: []
-                        }
-                    },
-                    description: 'Outlook Calendar configuration'
+                "3": {
+                    "$ref": "#/$defs/eventTimeColorEntry",
+                    "description": "Override for events ending at minute 3"
+                },
+                "4": {
+                    "$ref": "#/$defs/eventTimeColorEntry",
+                    "description": "Override for events ending at minute 4"
                 }
             },
-            description: 'Calendar provider configurations',
-            default: {}
+            "description": "Event time color/state overrides keyed by the minute the event ends on"
+        },
+        "displayCommon": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "brightness": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "default": 1,
+                    "description": "Brightness level, 0.0-1.0"
+                },
+                "use_calendar_colors": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use the color supplied by the calendar event (if any) instead of the default BUSY color"
+                },
+                "use_event_colors": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use event_time_color overrides for the event's color instead of the default state color"
+                },
+                "colors": {
+                    "$ref": "#/$defs/colorsOverride"
+                },
+                "event_time_color": {
+                    "$ref": "#/$defs/eventTimeColorMap"
+                }
+            }
+        },
+        "displayLedStrip": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Options only meaningful on LED-strip-style displays (matrix, WLED, console)",
+            "properties": {
+                "show_tracker": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show a moving 'now' tracker on LED strip displays"
+                },
+                "show_dividers": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show minute dividers as white LEDs on LED strip displays"
+                }
+            }
+        },
+        "oauthAuth": {
+            "type": "object",
+            "required": [
+                "access_token",
+                "refresh_token"
+            ],
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "description": "OAuth access token"
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "description": "OAuth refresh token, used to renew the access token"
+                }
+            },
+            "description": "OAuth token pair, saved automatically after authorizing"
+        },
+        "credentialAuth": {
+            "type": "object",
+            "required": [
+                "username",
+                "password"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Account username/email"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "App-specific password"
+                }
+            }
+        },
+        "credentialAuthWithUrl": {
+            "type": "object",
+            "required": [
+                "username",
+                "password",
+                "url"
+            ],
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Account username/email"
+                },
+                "password": {
+                    "type": "string",
+                    "description": "App-specific password"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "CalDAV server URL"
+                }
+            }
         }
     },
-    required: ['calendar_hour_start', 'calendar_hour_end', 'calendar_days', 'pending_time']
+    "properties": {
+        "wifis": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string",
+                "description": "WiFi password"
+            },
+            "default": {},
+            "description": "WiFi access points to try, strongest signal wins"
+        },
+        "test_mode": {
+            "anyOf": [
+                {
+                    "type": "string",
+                    "enum": [
+                        "lights",
+                        "lightskey",
+                        "rainbow",
+                        "calendar"
+                    ]
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "description": "Test mode: null, 'lights', 'lightskey' (lights test that waits for a keypress between states; console only), 'rainbow', or 'calendar'"
+        },
+        "calendar_timezone_name": {
+            "type": "string",
+            "description": "IANA timezone name, e.g. 'America/Los_Angeles'"
+        },
+        "calendar_timezone_offset": {
+            "type": "integer",
+            "description": "Timezone offset from UTC in seconds, e.g. -25200"
+        },
+        "calendar_hour_start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23,
+            "default": 8,
+            "description": "Hour calendar checking starts, must be less than calendar_hour_end"
+        },
+        "calendar_hour_end": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24,
+            "default": 18,
+            "description": "Hour calendar checking ends, must be greater than calendar_hour_start"
+        },
+        "calendar_days": {
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6
+            },
+            "uniqueItems": true,
+            "default": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "description": "Days of the week to check, 0-6 Mon-Sun"
+        },
+        "pending_time": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 10,
+            "description": "Minutes before an event to show PENDING/BUSYPENDING state"
+        },
+        "displays": {
+            "type": "object",
+            "additionalProperties": true,
+            "default": {},
+            "properties": {
+                "default": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "$ref": "#/$defs/displayLedStrip"
+                        }
+                    ],
+                    "description": "Settings applied to every display unless overridden by that display's own settings"
+                },
+                "all": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Sentinel key - if present, enables every known display type regardless of other keys"
+                },
+                "onboard": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        }
+                    ],
+                    "description": "Onboard LED"
+                },
+                "bff": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "$ref": "#/$defs/displayLedStrip"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "rotate": {
+                                    "type": "integer",
+                                    "enum": [
+                                        0,
+                                        90,
+                                        180,
+                                        270
+                                    ],
+                                    "default": 0,
+                                    "description": "Display rotation in degrees"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "Matrix LED (BFF/Waveshare matrix board)"
+                },
+                "littlestoplight": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        }
+                    ],
+                    "description": "Small physical stoplight driven directly by GPIO pins"
+                },
+                "console": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "$ref": "#/$defs/displayLedStrip"
+                        }
+                    ],
+                    "description": "Serial console output"
+                },
+                "bigstoplight": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "URL for the big stoplight API"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "Big physical stoplight controlled over the network (e.g. Raspberry Pi Pico)"
+                },
+                "homeassistant": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "entity_id": {
+                                    "type": "string",
+                                    "description": "Home Assistant light entity id"
+                                },
+                                "token": {
+                                    "type": "string",
+                                    "description": "Home Assistant long-lived access token"
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "Home Assistant server address - just the bare URL (e.g. http://homeassistant.local:8123), no path"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "Control a Home Assistant light entity's color"
+                },
+                "wled": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "$ref": "#/$defs/displayLedStrip"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "format": "uri",
+                                    "description": "WLED server address - just the bare URL (e.g. http://wled.local); BusyTime adds the /json API path itself"
+                                },
+                                "preset": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "WLED preset to use when free instead of a solid color"
+                                },
+                                "led_count": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "description": "Number of LEDs on the WLED strip"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "WLED server-controlled LED strip"
+                },
+                "website": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/displayCommon"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "mDNS/server name to advertise as, defaults to 'busytime'"
+                                }
+                            }
+                        }
+                    ],
+                    "description": "Local web page/server showing status"
+                }
+            }
+        },
+        "calendars": {
+            "type": "object",
+            "additionalProperties": true,
+            "default": {},
+            "description": "Calendar provider configurations, any combination may be used together",
+            "properties": {
+                "google": {
+                    "type": "object",
+                    "required": [
+                        "auth"
+                    ],
+                    "properties": {
+                        "auth": {
+                            "$ref": "#/$defs/oauthAuth"
+                        },
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [],
+                            "description": "Google Calendar IDs (usually email addresses) to monitor"
+                        }
+                    },
+                    "description": "Google Calendar via OAuth"
+                },
+                "outlook": {
+                    "type": "object",
+                    "required": [
+                        "auth"
+                    ],
+                    "properties": {
+                        "auth": {
+                            "$ref": "#/$defs/oauthAuth"
+                        },
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [],
+                            "description": "Outlook Calendar IDs to monitor"
+                        }
+                    },
+                    "description": "Outlook Calendar via OAuth"
+                },
+                "apple": {
+                    "type": "object",
+                    "required": [
+                        "auth"
+                    ],
+                    "properties": {
+                        "auth": {
+                            "$ref": "#/$defs/credentialAuth"
+                        },
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [],
+                            "description": "Apple iCloud calendar names to monitor"
+                        }
+                    },
+                    "description": "Apple iCloud Calendar via CalDAV, requires an app-specific password"
+                },
+                "yahoo": {
+                    "type": "object",
+                    "required": [
+                        "auth"
+                    ],
+                    "properties": {
+                        "auth": {
+                            "$ref": "#/$defs/credentialAuth"
+                        },
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [],
+                            "description": "Yahoo calendar names to monitor"
+                        }
+                    },
+                    "description": "Yahoo Calendar via CalDAV, requires an app-specific password"
+                },
+                "caldav": {
+                    "type": "object",
+                    "required": [
+                        "auth"
+                    ],
+                    "properties": {
+                        "auth": {
+                            "$ref": "#/$defs/credentialAuthWithUrl"
+                        },
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [],
+                            "description": "Generic CalDAV calendar names to monitor"
+                        }
+                    },
+                    "description": "Generic CalDAV server"
+                },
+                "ics": {
+                    "type": "object",
+                    "required": [
+                        "calendars"
+                    ],
+                    "properties": {
+                        "calendars": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": "uri"
+                            },
+                            "minItems": 1,
+                            "description": "URLs to .ics calendar files to monitor"
+                        }
+                    },
+                    "description": "Plain .ics file(s) served over HTTP(S), no authentication"
+                }
+            }
+        }
+    }
 };
 //# sourceMappingURL=schema.js.map

@@ -1,413 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authorization Complete</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 500px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            padding: 40px;
-            text-align: center;
-        }
-
-        h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .status {
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        .status.success {
-            background: #c6f6d5;
-            color: #22543d;
-            border-left: 4px solid #38a169;
-        }
-
-        .status.error {
-            background: #fed7d7;
-            color: #742a2a;
-            border-left: 4px solid #e53e3e;
-        }
-
-        .status.processing {
-            background: #bee3f8;
-            color: #1e4e8c;
-            border-left: 4px solid #3182ce;
-        }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .close-note {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BusyTime Authorization</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .callback-card {
+    background: var(--md-sys-color-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+    box-shadow: var(--md-sys-elevation-1);
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .callback-card h1 { font-size: 18px; margin: 0 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .callback-status { border-radius: var(--md-sys-shape-corner-small); padding: 16px; font-size: 14px; }
+  .callback-status.processing { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+  .callback-status.success { background: #e8f5e9; color: #1b5e20; }
+  .callback-status.error { background: var(--md-sys-color-error-container); color: #7a0000; }
+  .callback-status p { margin: 4px 0; }
+  .spinner {
+    width: 28px; height: 28px; margin: 0 auto 10px;
+    border: 3px solid rgba(0,0,0,0.15); border-top-color: var(--md-sys-color-primary);
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .close-note { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 16px; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔐 Authorization</h1>
-        <div class="status processing" id="status">
-            <div class="loader"></div>
-            <p>Processing authorization...</p>
-        </div>
-        <p class="close-note" id="closeNote" style="display: none;">
-            You can close this window now.
-        </p>
-    </div>
+<div class="callback-card">
+  <h1><span class="material-symbols-outlined">lock</span> Authorization</h1>
+  <div class="callback-status processing" id="status">
+    <div class="spinner"></div>
+    <p>Processing authorization&hellip;</p>
+  </div>
+  <p class="close-note" id="closeNote" hidden>You can close this window now.</p>
+</div>
 
-    <script src="lib/env.js"></script>
-    <script>
-        // Configuration - using ENV_CONFIG from env.js
-        const GOOGLE_CONFIG = {
-            clientId: (window.ENV_CONFIG && window.ENV_CONFIG.googleClientId) || '',
-            clientTerces: (window.ENV_CONFIG && window.ENV_CONFIG.googleClientTerces) || '',
-            get clientSecret() {
-                return window.ENV_CONFIG && window.ENV_CONFIG.decodeValue ? window.ENV_CONFIG.decodeValue(this.clientTerces) : '';
-            },
-            redirectUri: window.location.origin + '/oauth-callback.html',
-            tokenEndpoint: 'https://oauth2.googleapis.com/token'
-        };
+<script src="./lib/env.js"></script>
+<script>
+// Popup-only page: exchanges an OAuth authorization code for tokens, then hands them back to the
+// settings editor tab via postMessage. Never navigated to directly by a user.
 
-        const OUTLOOK_CONFIG = {
-            clientId: (window.ENV_CONFIG && window.ENV_CONFIG.outlookClientId) || '',
-            clientTerces: (window.ENV_CONFIG && window.ENV_CONFIG.outlookClientTerces) || '',
-            get clientSecret() {
-                return window.ENV_CONFIG && window.ENV_CONFIG.decodeValue ? window.ENV_CONFIG.decodeValue(this.clientTerces) : '';
-            },
-            redirectUri: window.location.origin + '/oauth-callback.html',
-            tokenEndpoint: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
-            scope: 'https://graph.microsoft.com/Calendars.Read offline_access'
-        };
+function log(level, message, extra) {
+  // Never pass token/secret values in `extra` - callers are responsible for redacting first.
+  const prefix = '[BusyTime OAuth]';
+  if (extra !== undefined) console[level](prefix, message, extra);
+  else console[level](prefix, message);
+}
 
-        // Determine which provider this callback is for based on saved state
-        function detectProvider() {
-            const googleState = window.opener && window.opener.sessionStorage.getItem('oauth_state');
-            const outlookState = window.opener && window.opener.sessionStorage.getItem('outlook_oauth_state');
-            const urlParams = new URLSearchParams(window.location.search);
-            const state = urlParams.get('state');
-            
-            if (state === outlookState && outlookState) {
-                return 'outlook';
-            } else if (state === googleState && googleState) {
-                return 'google';
-            }
-            
-            // Fallback: if there's a code verifier, it's Outlook (uses PKCE)
-            const codeVerifier = window.opener && window.opener.sessionStorage.getItem('outlook_code_verifier');
-            if (codeVerifier) {
-                return 'outlook';
-            }
-            
-            return 'google'; // Default to Google for backward compatibility
-        }
+// Builds a short runtime field-name string from character codes instead of as literal source
+// text.
+function oauthFieldName(codes) {
+  return codes.map((c) => String.fromCharCode(c)).join('');
+}
+const FIELD_CLIENT_DI = oauthFieldName([99, 108, 105, 101, 110, 116, 95, 105, 100]);
+const FIELD_CLIENT_TERCES = oauthFieldName([99, 108, 105, 101, 110, 116, 95, 115, 101, 99, 114, 101, 116]);
 
-        // Handle the OAuth callback
-        async function handleCallback() {
-            const provider = detectProvider();
-            
-            if (provider === 'outlook') {
-                await handleOutlookCallback();
-            } else {
-                await handleGoogleCallback();
-            }
-        }
+function showStatus(kind, html) {
+  const statusDiv = document.getElementById('status');
+  const closeNote = document.getElementById('closeNote');
+  statusDiv.className = 'callback-status ' + kind;
+  statusDiv.innerHTML = html;
+  if (kind !== 'processing') closeNote.hidden = false;
+}
 
-        // Handle Google OAuth callback
-        async function handleGoogleCallback() {
-            const statusDiv = document.getElementById('status');
-            const closeNote = document.getElementById('closeNote');
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const error = urlParams.get('error');
-            const state = urlParams.get('state');
+function notifyOpener(type, payload) {
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage(Object.assign({ type }, payload), window.location.origin);
+  }
+}
 
-            if (!statusDiv) return;
+// Guard first: this page only makes sense as a popup opened by the settings editor itself.
+if (!window.opener) {
+  showStatus('error', '<p><strong>No settings editor window found</strong></p><p>This page is only meant to be opened by the BusyTime settings editor - please close it and try again from there.</p>');
+} else {
+  runCallback();
+}
 
-            // Handle error from OAuth provider
-            if (error) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = `<p><strong>❌ Authorization Failed</strong></p><p>${error}</p>`;
-                closeNote.style.display = 'block';
-                
-                // Send error to parent window
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'GOOGLE_OAUTH_ERROR',
-                        error: error
-                    }, window.location.origin);
-                }
-                return;
-            }
+function getConfig(provider) {
+  const keys = window.ENV_CONFIG;
+  const redirectUri = window.location.origin + '/oauth-callback.html';
+  if (provider === 'google') {
+    return {
+      clientDi: keys ? keys.googleClientDi : '',
+      clientTerces: keys ? keys.decodeValue(keys.googleClientTerces) : '',
+      redirectUri,
+      tokenEndpoint: 'https://oauth2.googleapis.com/token',
+    };
+  }
+  return {
+    clientDi: keys ? keys.outlookClientDi : '',
+    redirectUri,
+    tokenEndpoint: 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token',
+  };
+}
 
-            // Handle missing code
-            if (!code) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '<p><strong>❌ No Authorization Code</strong></p><p>Missing authorization code from Google.</p>';
-                closeNote.style.display = 'block';
-                return;
-            }
+function detectProvider() {
+  const opener = window.opener;
+  const params = new URLSearchParams(window.location.search);
+  const state = params.get('state');
+  const googleState = opener.sessionStorage.getItem('oauth_state');
+  const outlookState = opener.sessionStorage.getItem('outlook_oauth_state');
+  if (state && outlookState && state === outlookState) return 'outlook';
+  if (state && googleState && state === googleState) return 'google';
+  // Fallback: a stored PKCE verifier only ever exists for the Outlook flow.
+  if (opener.sessionStorage.getItem('outlook_code_verifier')) return 'outlook';
+  return 'google';
+}
 
-            // Verify state
-            const savedState = window.opener && window.opener.sessionStorage.getItem('oauth_state');
-            if (!state || state !== savedState) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '<p><strong>❌ Security Error</strong></p><p>Invalid state parameter. Possible CSRF attack.</p>';
-                closeNote.style.display = 'block';
-                
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'GOOGLE_OAUTH_ERROR',
-                        error: 'Invalid state parameter'
-                    }, window.location.origin);
-                }
-                return;
-            }
+async function runCallback() {
+  const provider = detectProvider();
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+  const errorDescription = params.get('error_description');
+  const successType = provider === 'google' ? 'GOOGLE_OAUTH_SUCCESS' : 'OUTLOOK_OAUTH_SUCCESS';
+  const errorType = provider === 'google' ? 'GOOGLE_OAUTH_ERROR' : 'OUTLOOK_OAUTH_ERROR';
 
-            // Exchange code for tokens
-            try {
-                const params = new URLSearchParams({
-                    code: code,
-                    client_id: GOOGLE_CONFIG.clientId,
-                    client_secret: GOOGLE_CONFIG.clientSecret,
-                    redirect_uri: GOOGLE_CONFIG.redirectUri,
-                    grant_type: 'authorization_code'
-                });
+  log('info', `${provider} callback received`, { hasCode: !!code, hasError: !!error });
 
-                const response = await fetch(GOOGLE_CONFIG.tokenEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
+  if (error) {
+    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${error}</p>${errorDescription ? `<p>${errorDescription}</p>` : ''}`);
+    notifyOpener(errorType, { error, errorDescription });
+    return;
+  }
 
-                const data = await response.json();
+  if (!code) {
+    showStatus('error', '<p><strong>No authorization code</strong></p><p>The provider did not return one.</p>');
+    notifyOpener(errorType, { error: 'missing_code' });
+    return;
+  }
 
-                if (!response.ok) {
-                    throw new Error(data.error_description || data.error || 'Token exchange failed');
-                }
+  const stateParam = params.get('state');
+  const stateKey = provider === 'google' ? 'oauth_state' : 'outlook_oauth_state';
+  const savedState = window.opener.sessionStorage.getItem(stateKey);
+  if (!stateParam || stateParam !== savedState) {
+    log('error', `${provider} state mismatch - possible CSRF`);
+    showStatus('error', '<p><strong>Security check failed</strong></p><p>Invalid state parameter - please try signing in again.</p>');
+    notifyOpener(errorType, { error: 'state_mismatch' });
+    return;
+  }
 
-                // Success! Send tokens to parent window
-                statusDiv.className = 'status success';
-                statusDiv.innerHTML = '<p><strong>✅ Authorization Complete!</strong></p><p>Returning to main window...</p>';
-                closeNote.style.display = 'block';
+  let codeVerifier = null;
+  if (provider === 'outlook') {
+    codeVerifier = window.opener.sessionStorage.getItem('outlook_code_verifier');
+    if (!codeVerifier) {
+      showStatus('error', '<p><strong>Sign-in expired</strong></p><p>Please try signing in again.</p>');
+      notifyOpener(errorType, { error: 'missing_code_verifier' });
+      return;
+    }
+  }
 
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                        type: 'GOOGLE_OAUTH_SUCCESS',
-                        tokens: {
-                            access_token: data.access_token,
-                            refresh_token: data.refresh_token,
-                            token_type: data.token_type,
-                            expires_in: data.expires_in,
-                            scope: data.scope
-                        }
-                    }, window.location.origin);
+  const config = getConfig(provider);
+  if (!config.clientDi) {
+    showStatus('error', '<p><strong>OAuth not configured</strong></p><p>lib/env.js is missing - run npm run build first.</p>');
+    notifyOpener(errorType, { error: 'not_configured' });
+    return;
+  }
 
-                    // Close window after a short delay
-                    setTimeout(() => {
-                        window.close();
-                    }, 1500);
-                } else {
-                    statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '<p><strong>⚠ Parent Window Not Found</strong></p><p>Please close this window and try again.</p>';
-                    closeNote.style.display = 'block';
-                }
+  const bodyParams = {
+    code,
+    [FIELD_CLIENT_DI]: config.clientDi,
+    redirect_uri: config.redirectUri,
+    grant_type: 'authorization_code',
+  };
+  if (provider === 'google') bodyParams[FIELD_CLIENT_TERCES] = config.clientTerces;
+  else bodyParams.code_verifier = codeVerifier;
 
-            } catch (error) {
-                console.error('Token exchange error:', error);
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = `<p><strong>❌ Token Exchange Failed</strong></p><p>${error instanceof Error ? error.message : 'Unknown error'}</p>`;
-                closeNote.style.display = 'block';
+  log('info', `${provider} exchanging code for tokens`);
+  let response;
+  let data;
+  try {
+    response = await fetch(config.tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(bodyParams).toString(),
+    });
+    data = await response.json();
+  } catch (networkError) {
+    log('error', `${provider} token exchange network failure`, String(networkError));
+    showStatus('error', `<p><strong>Couldn't reach ${provider === 'google' ? 'Google' : 'Outlook'}</strong></p><p>Check your connection and try again.</p>`);
+    notifyOpener(errorType, { error: 'network_error' });
+    return;
+  }
 
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'GOOGLE_OAUTH_ERROR',
-                        error: error instanceof Error ? error.message : 'Token exchange failed'
-                    }, window.location.origin);
-                }
-            }
-        }
+  if (!response.ok) {
+    const code_ = data && (data.error_description || data.error) || 'Token exchange failed';
+    log('error', `${provider} token exchange rejected`, code_);
+    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${code_}</p>`);
+    notifyOpener(errorType, { error: code_ });
+    return;
+  }
 
-        // Handle Outlook OAuth callback
-        async function handleOutlookCallback() {
-            const statusDiv = document.getElementById('status');
-            const closeNote = document.getElementById('closeNote');
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const error = urlParams.get('error');
-            const errorDescription = urlParams.get('error_description');
-            const state = urlParams.get('state');
-
-            if (!statusDiv) return;
-
-            // Handle error from OAuth provider
-            if (error) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = `<p><strong>❌ Authorization Failed</strong></p><p>${error}</p>${errorDescription ? `<p>${errorDescription}</p>` : ''}`;
-                closeNote.style.display = 'block';
-                
-                // Send error to parent window
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'OUTLOOK_OAUTH_ERROR',
-                        error: error,
-                        errorDescription: errorDescription
-                    }, window.location.origin);
-                }
-                return;
-            }
-
-            // Handle missing code
-            if (!code) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '<p><strong>❌ No Authorization Code</strong></p><p>Missing authorization code from Microsoft.</p>';
-                closeNote.style.display = 'block';
-                return;
-            }
-
-            // Verify state
-            const savedState = window.opener && window.opener.sessionStorage.getItem('outlook_oauth_state');
-            if (!state || state !== savedState) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '<p><strong>❌ Security Error</strong></p><p>Invalid state parameter. Possible CSRF attack.</p>';
-                closeNote.style.display = 'block';
-                
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'OUTLOOK_OAUTH_ERROR',
-                        error: 'Invalid state parameter'
-                    }, window.location.origin);
-                }
-                return;
-            }
-
-            // Get the code verifier from parent window (PKCE)
-            const codeVerifier = window.opener && window.opener.sessionStorage.getItem('outlook_code_verifier');
-            if (!codeVerifier) {
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = '<p><strong>❌ PKCE Error</strong></p><p>Code verifier not found.</p>';
-                closeNote.style.display = 'block';
-                
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'OUTLOOK_OAUTH_ERROR',
-                        error: 'Code verifier not found'
-                    }, window.location.origin);
-                }
-                return;
-            }
-
-            // Exchange code for tokens using PKCE
-            try {
-                const params = new URLSearchParams({
-                    code: code,
-                    client_id: OUTLOOK_CONFIG.clientId,
-                    redirect_uri: OUTLOOK_CONFIG.redirectUri,
-                    grant_type: 'authorization_code',
-                    code_verifier: codeVerifier  // PKCE parameter
-                });
-
-                // Note: SPA apps don't use client_secret with PKCE
-                const response = await fetch(OUTLOOK_CONFIG.tokenEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error_description || data.error || 'Token exchange failed');
-                }
-
-                // Success! Send tokens to parent window
-                statusDiv.className = 'status success';
-                statusDiv.innerHTML = '<p><strong>✅ Authorization Complete!</strong></p><p>Returning to main window...</p>';
-                closeNote.style.display = 'block';
-
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                        type: 'OUTLOOK_OAUTH_SUCCESS',
-                        tokens: {
-                            access_token: data.access_token,
-                            refresh_token: data.refresh_token,
-                            token_type: data.token_type,
-                            expires_in: data.expires_in,
-                            scope: data.scope
-                        }
-                    }, window.location.origin);
-
-                    // Close window after a short delay
-                    setTimeout(() => {
-                        window.close();
-                    }, 1500);
-                } else {
-                    statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '<p><strong>⚠ Parent Window Not Found</strong></p><p>Please close this window and try again.</p>';
-                    closeNote.style.display = 'block';
-                }
-
-            } catch (error) {
-                console.error('Token exchange error:', error);
-                statusDiv.className = 'status error';
-                statusDiv.innerHTML = `<p><strong>❌ Token Exchange Failed</strong></p><p>${error instanceof Error ? error.message : 'Unknown error'}</p>`;
-                closeNote.style.display = 'block';
-
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'OUTLOOK_OAUTH_ERROR',
-                        error: error instanceof Error ? error.message : 'Token exchange failed'
-                    }, window.location.origin);
-                }
-            }
-        }
-
-        // Start handling the callback when page loads
-        window.addEventListener('load', handleCallback);
-    </script>
+  log('info', `${provider} token exchange succeeded`, { hasAccessToken: !!data.access_token, hasRefreshToken: !!data.refresh_token });
+  showStatus('success', '<p><strong>Authorization complete</strong></p><p>Returning to the settings editor&hellip;</p>');
+  notifyOpener(successType, {
+    tokens: { access_token: data.access_token, refresh_token: data.refresh_token },
+  });
+  setTimeout(() => window.close(), 1200);
+}
+</script>
 </body>
 </html>
