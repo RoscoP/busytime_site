@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BusyTime settings.json",
+  "description": "Validates a BusyTime settings.json file. Unknown/extra properties are allowed anywhere (forward-compatible, catches nothing beyond what's modeled here).",
+  "type": "object",
+  "additionalProperties": true,
+  "$defs": {
+    "rgbColor": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "RGB color as [r, g, b], each 0-255"
+    },
+    "stateName": {
+      "type": "string",
+      "enum": ["NONE", "TESTING", "SETUP", "WAITING", "ERROR", "IDLE", "FREE", "POSSIBLE", "PENDING", "BUSYPENDING", "BUSY"]
+    },
+    "colorsOverride": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "NONE": { "$ref": "#/$defs/rgbColor" },
+        "TESTING": { "$ref": "#/$defs/rgbColor" },
+        "SETUP": { "$ref": "#/$defs/rgbColor" },
+        "WAITING": { "$ref": "#/$defs/rgbColor" },
+        "ERROR": { "$ref": "#/$defs/rgbColor" },
+        "IDLE": { "$ref": "#/$defs/rgbColor" },
+        "FREE": { "$ref": "#/$defs/rgbColor" },
+        "POSSIBLE": { "$ref": "#/$defs/rgbColor" },
+        "PENDING": { "$ref": "#/$defs/rgbColor" },
+        "BUSYPENDING": { "$ref": "#/$defs/rgbColor" },
+        "BUSY": { "$ref": "#/$defs/rgbColor" }
+      },
+      "description": "Per-state color overrides, applied on top of the built-in defaults"
+    },
+    "eventTimeColorEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "state": {
+          "anyOf": [{ "$ref": "#/$defs/stateName" }, { "type": "null" }],
+          "default": null,
+          "description": "State override for matching events (null = use the event's natural state)"
+        },
+        "color": {
+          "anyOf": [{ "$ref": "#/$defs/rgbColor" }, { "type": "null" }],
+          "default": null,
+          "description": "Color override for matching events (null = use the default color for the state)"
+        }
+      }
+    },
+    "eventTimeColorMap": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "1": { "$ref": "#/$defs/eventTimeColorEntry", "description": "Override for events ending at minute 1" },
+        "2": { "$ref": "#/$defs/eventTimeColorEntry", "description": "Override for events ending at minute 2" },
+        "3": { "$ref": "#/$defs/eventTimeColorEntry", "description": "Override for events ending at minute 3" },
+        "4": { "$ref": "#/$defs/eventTimeColorEntry", "description": "Override for events ending at minute 4" }
+      },
+      "description": "Event time color/state overrides keyed by the minute the event ends on"
+    },
+    "displayCommon": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "brightness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0,
+          "description": "Brightness level, 0.0-1.0"
+        },
+        "use_calendar_colors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use the color supplied by the calendar event (if any) instead of the default BUSY color"
+        },
+        "use_event_colors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use event_time_color overrides for the event's color instead of the default state color"
+        },
+        "colors": { "$ref": "#/$defs/colorsOverride" },
+        "event_time_color": { "$ref": "#/$defs/eventTimeColorMap" }
+      }
+    },
+    "displayLedStrip": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Options only meaningful on LED-strip-style displays (matrix, WLED, console)",
+      "properties": {
+        "show_tracker": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show a moving 'now' tracker on LED strip displays"
+        },
+        "show_dividers": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show minute dividers as white LEDs on LED strip displays"
+        }
+      }
+    },
+    "oauthAuth": {
+      "type": "object",
+      "required": ["access_token", "refresh_token"],
+      "properties": {
+        "access_token": { "type": "string", "description": "OAuth access token" },
+        "refresh_token": { "type": "string", "description": "OAuth refresh token, used to renew the access token" }
+      },
+      "description": "OAuth token pair, saved automatically after authorizing"
+    },
+    "credentialAuth": {
+      "type": "object",
+      "required": ["username", "password"],
+      "properties": {
+        "username": { "type": "string", "description": "Account username/email" },
+        "password": { "type": "string", "description": "App-specific password" }
+      }
+    },
+    "credentialAuthWithUrl": {
+      "type": "object",
+      "required": ["username", "password", "url"],
+      "properties": {
+        "username": { "type": "string", "description": "Account username/email" },
+        "password": { "type": "string", "description": "App-specific password" },
+        "url": { "type": "string", "format": "uri", "description": "CalDAV server URL" }
+      }
+    }
+  },
+  "properties": {
+    "wifis": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "description": "WiFi password" },
+      "default": {},
+      "description": "WiFi access points to try, strongest signal wins"
+    },
+    "test_mode": {
+      "anyOf": [{ "type": "string", "enum": ["lights", "lightskey", "rainbow", "calendar"] }, { "type": "null" }],
+      "default": null,
+      "description": "Test mode: null, 'lights', 'lightskey' (lights test that waits for a keypress between states; console only), 'rainbow', or 'calendar'"
+    },
+    "calendar_timezone_name": {
+      "type": "string",
+      "description": "IANA timezone name, e.g. 'America/Los_Angeles'"
+    },
+    "calendar_timezone_offset": {
+      "type": "integer",
+      "description": "Timezone offset from UTC in seconds, e.g. -25200"
+    },
+    "calendar_hour_start": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 23,
+      "default": 8,
+      "description": "Hour calendar checking starts, must be less than calendar_hour_end"
+    },
+    "calendar_hour_end": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 24,
+      "default": 18,
+      "description": "Hour calendar checking ends, must be greater than calendar_hour_start"
+    },
+    "calendar_days": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 6 },
+      "uniqueItems": true,
+      "default": [0, 1, 2, 3, 4],
+      "description": "Days of the week to check, 0-6 Mon-Sun"
+    },
+    "pending_time": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 10,
+      "description": "Minutes before an event to show PENDING/BUSYPENDING state"
+    },
+    "displays": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "properties": {
+        "default": {
+          "allOf": [{ "$ref": "#/$defs/displayCommon" }, { "$ref": "#/$defs/displayLedStrip" }],
+          "description": "Settings applied to every display unless overridden by that display's own settings"
+        },
+        "all": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Sentinel key - if present, enables every known display type regardless of other keys"
+        },
+        "onboard": {
+          "allOf": [{ "$ref": "#/$defs/displayCommon" }],
+          "description": "Onboard LED"
+        },
+        "bff": {
+          "allOf": [
+            { "$ref": "#/$defs/displayCommon" },
+            { "$ref": "#/$defs/displayLedStrip" },
+            {
+              "type": "object",
+              "properties": {
+                "rotate": {
+                  "type": "integer",
+                  "enum": [0, 90, 180, 270],
+                  "default": 0,
+                  "description": "Display rotation in degrees"
+                }
+              }
+            }
+          ],
+          "description": "Matrix LED (BFF/Waveshare matrix board)"
+        },
+        "littlestoplight": {
+          "allOf": [{ "$ref": "#/$defs/displayCommon" }],
+          "description": "Small physical stoplight driven directly by GPIO pins"
+        },
+        "console": {
+          "allOf": [{ "$ref": "#/$defs/displayCommon" }, { "$ref": "#/$defs/displayLedStrip" }],
+          "description": "Serial console output"
+        },
+        "bigstoplight": {
+          "allOf": [
+            { "$ref": "#/$defs/displayCommon" },
+            {
+              "type": "object",
+              "properties": {
+                "url": { "type": "string", "format": "uri", "description": "URL for the big stoplight API" }
+              }
+            }
+          ],
+          "description": "Big physical stoplight controlled over the network (e.g. Raspberry Pi Pico)"
+        },
+        "homeassistant": {
+          "allOf": [
+            { "$ref": "#/$defs/displayCommon" },
+            {
+              "type": "object",
+              "properties": {
+                "entity_id": { "type": "string", "description": "Home Assistant light entity id" },
+                "token": { "type": "string", "description": "Home Assistant long-lived access token" },
+                "url": { "type": "string", "format": "uri",                 "description": "Home Assistant server address - just the bare URL (e.g. http://homeassistant.local:8123), no path" }
+              }
+            }
+          ],
+          "description": "Control a Home Assistant light entity's color"
+        },
+        "wled": {
+          "allOf": [
+            { "$ref": "#/$defs/displayCommon" },
+            { "$ref": "#/$defs/displayLedStrip" },
+            {
+              "type": "object",
+              "properties": {
+                "url": { "type": "string", "format": "uri",                 "description": "WLED server address - just the bare URL (e.g. http://wled.local); BusyTime adds the /json API path itself" },
+                "preset": { "type": "integer", "minimum": 0, "description": "WLED preset to use when free instead of a solid color" },
+                "led_count": { "type": "integer", "minimum": 1, "description": "Number of LEDs on the WLED strip" }
+              }
+            }
+          ],
+          "description": "WLED server-controlled LED strip"
+        },
+        "website": {
+          "allOf": [
+            { "$ref": "#/$defs/displayCommon" },
+            {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "description": "mDNS/server name to advertise as, defaults to 'busytime'" }
+              }
+            }
+          ],
+          "description": "Local web page/server showing status"
+        }
+      }
+    },
+    "calendars": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Calendar provider configurations, any combination may be used together",
+      "properties": {
+        "google": {
+          "type": "object",
+          "required": ["auth"],
+          "properties": {
+            "auth": { "$ref": "#/$defs/oauthAuth" },
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Google Calendar IDs (usually email addresses) to monitor"
+            }
+          },
+          "description": "Google Calendar via OAuth"
+        },
+        "outlook": {
+          "type": "object",
+          "required": ["auth"],
+          "properties": {
+            "auth": { "$ref": "#/$defs/oauthAuth" },
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Outlook Calendar IDs to monitor"
+            }
+          },
+          "description": "Outlook Calendar via OAuth"
+        },
+        "apple": {
+          "type": "object",
+          "required": ["auth"],
+          "properties": {
+            "auth": { "$ref": "#/$defs/credentialAuth" },
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Apple iCloud calendar names to monitor"
+            }
+          },
+          "description": "Apple iCloud Calendar via CalDAV, requires an app-specific password"
+        },
+        "yahoo": {
+          "type": "object",
+          "required": ["auth"],
+          "properties": {
+            "auth": { "$ref": "#/$defs/credentialAuth" },
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Yahoo calendar names to monitor"
+            }
+          },
+          "description": "Yahoo Calendar via CalDAV, requires an app-specific password"
+        },
+        "caldav": {
+          "type": "object",
+          "required": ["auth"],
+          "properties": {
+            "auth": { "$ref": "#/$defs/credentialAuthWithUrl" },
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Generic CalDAV calendar names to monitor"
+            }
+          },
+          "description": "Generic CalDAV server"
+        },
+        "ics": {
+          "type": "object",
+          "required": ["calendars"],
+          "properties": {
+            "calendars": {
+              "type": "array",
+              "items": { "type": "string", "format": "uri" },
+              "minItems": 1,
+              "description": "URLs to .ics calendar files to monitor"
+            }
+          },
+          "description": "Plain .ics file(s) served over HTTP(S), no authentication"
+        }
+      }
+    }
+  }
+}

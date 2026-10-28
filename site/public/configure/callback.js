@@ -1,36 +1,8 @@
-"use strict";
-function decodeValue(encoded) {
-    if (!encoded)
-        return '';
-    try {
-        const xorKey = 42;
-        const decoded = atob(encoded);
-        let result = '';
-        for (let i = 0; i < decoded.length; i++) {
-            result += String.fromCharCode(decoded.charCodeAt(i) ^ xorKey);
-        }
-        return result;
-    }
-    catch (e) {
-        console.error('Failed to decode value:', e);
-        return '';
-    }
-}
-window.ENV_CONFIG = {
-    get googleClientDi() {
-        return decodeValue('EhIZGRwdEhIYGR4YBxxYTBMeElxERh0ZGBlPW00ZQkJYRUESW0wfG0xcSU9LBEtaWlkETUVFTUZPX1lPWElFRF5PRF4ESUVH');
-    },
-    googleClientTerces: 'bWVpeXpyB3toYXoacGtaHWhjfWhvekJCTklGTXB9QnIfE18=',
-    get outlookClientDi() {
-        return decodeValue('HElPG0wfGEkHTExMTgceSEscBxIZThgHT0waSxkaHxwcSBkS');
-    },
-    outlookClientTerces: '',
-    decodeValue: decodeValue
-};
-
 // Popup-only page logic for /oauth-callback.html: exchanges an OAuth authorization code for
 // tokens, then hands them back to the settings editor tab via postMessage. Never navigated to
-// directly by a user. build-site.js prepends lib/env.js (window.ENV_CONFIG) to this file.
+// directly by a user. A module: it imports env.js (the OAuth client IDs) next to it in the site.
+
+import { ENV_CONFIG } from './env.js';
 
 function log(level, message, extra) {
   // Never pass token/secret values in `extra` - callers are responsible for redacting first.
@@ -74,7 +46,7 @@ if (!window.opener) {
 }
 
 function getConfig(provider) {
-  const keys = window.ENV_CONFIG;
+  const keys = ENV_CONFIG;
   const redirectUri = window.location.origin + '/oauth-callback.html';
   if (provider === 'google') {
     return {

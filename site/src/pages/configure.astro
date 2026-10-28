@@ -16,8 +16,12 @@ import Base from '../layouts/Base.astro';
       <noscript><p>The configuration tool requires JavaScript.</p></noscript>
     </div>
   </main>
-  <!-- Built from the busytime repo (src/webapp) and copied here by Deploy-Webapp.ps1. -->
-  <script is:inline src="/configure/app.js" defer></script>
+  <!-- Ajv (JSON-schema validator) from a public CDN: pinned version + SRI hash. Keep the version in step with
+       ajv-dist in busytime/src/webapp/package.json. If it fails to load, the app falls back to built-in checks. -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/ajv-dist@8.17.1/dist/ajv2020.min.js"
+    integrity="sha384-vsMiC2R9fcX/SqeA9xJ+Lpbbe1fRi7RDpgHenZH7A8yXAoX+9T4m8MfuwrafZAAL" crossorigin="anonymous" defer></script>
+  <!-- Built from the busytime repo (src/webapp) and copied here by Deploy-Webapp.ps1. Modules run after the deferred Ajv script. -->
+  <script is:inline type="module" src="/configure/app.js"></script>
 </Base>
 
 <style>
