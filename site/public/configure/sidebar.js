@@ -1,16 +1,16 @@
-// BusyTime configurator v1.0.8
+// BusyTime configurator v1.0.9
 export { isStepLocked, gotoStep, unlockThrough, goNext, goBack, renderSidebar, disarmRestart, renderMain, appendStepIssues, stepActions, renderSubStepActions, resetRenderedStep };
-import { renderCalendarsOverview, renderProviderSubStep } from './calendars-step.js?v=1.0.8';
-import { STEP_META, TOP_LEVEL_ORDER, DISPLAY_TYPES } from './config.js?v=1.0.8';
-import { ensureCredStatusChecked, ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.8';
-import { renderDisplaysOverview, renderDisplaySubStep } from './displays-step.js?v=1.0.8';
-import { restartEditor } from './editor.js?v=1.0.8';
-import { ensureOauthStatusChecked } from './oauth.js?v=1.0.8';
-import { renderReviewStep } from './review-step.js?v=1.0.8';
-import { renderScheduleStep } from './schedule-step.js?v=1.0.8';
-import { currentStepId, dirty, setCurrentStepId, settings, unlocked } from './state.js?v=1.0.8';
-import { el, getValidationBuckets, stepOrDescendantHasIssue } from './validation.js?v=1.0.8';
-import { renderWifiStep } from './wifi-step.js?v=1.0.8';
+import { renderCalendarsOverview, renderProviderSubStep } from './calendars-step.js?v=1.0.9';
+import { STEP_META, TOP_LEVEL_ORDER, DISPLAY_TYPES } from './config.js?v=1.0.9';
+import { ensureCredStatusChecked, ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.9';
+import { renderDisplaysOverview, renderDisplaySubStep } from './displays-step.js?v=1.0.9';
+import { restartEditor } from './editor.js?v=1.0.9';
+import { ensureOauthStatusChecked } from './oauth.js?v=1.0.9';
+import { renderReviewStep } from './review-step.js?v=1.0.9';
+import { renderScheduleStep } from './schedule-step.js?v=1.0.9';
+import { currentStepId, dirty, setCurrentStepId, settings, unlocked } from './state.js?v=1.0.9';
+import { el, getValidationBuckets, stepOrDescendantHasIssue } from './validation.js?v=1.0.9';
+import { renderWifiStep } from './wifi-step.js?v=1.0.9';
 function isStepLocked(id) {
     return !unlocked.has(id);
 }

@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.8
-import { DAY_LABELS, DISPLAY_TYPES, TOP_LEVEL_ORDER } from './config.js?v=1.0.8';
-import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.8';
-import { activeDisplayTypes, configuredDisplayTypes, ensureDefaults, formatOffset, hasHardErrors } from './helpers.js?v=1.0.8';
-import { hourLabel } from './schedule-step.js?v=1.0.8';
-import { gotoStep } from './sidebar.js?v=1.0.8';
-import { markClean, settings } from './state.js?v=1.0.8';
-import { el, getValidationBuckets, sortedBucketKeys, stepLabel } from './validation.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { DAY_LABELS, DISPLAY_TYPES, TOP_LEVEL_ORDER } from './config.js?v=1.0.9';
+import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
+import { activeDisplayTypes, configuredDisplayTypes, ensureDefaults, formatOffset, hasHardErrors } from './helpers.js?v=1.0.9';
+import { hourLabel } from './schedule-step.js?v=1.0.9';
+import { gotoStep } from './sidebar.js?v=1.0.9';
+import { markClean, settings } from './state.js?v=1.0.9';
+import { el, getValidationBuckets, sortedBucketKeys, stepLabel } from './validation.js?v=1.0.9';
 export { renderReviewSummary, renderReviewStep, downloadSettings, saveAsSettings };
 let saveStatusEl = null;
 function renderReviewSummary() {

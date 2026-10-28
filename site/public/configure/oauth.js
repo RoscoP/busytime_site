@@ -1,9 +1,9 @@
-// BusyTime configurator v1.0.8
-import { ENV_CONFIG } from './env.js?v=1.0.8';
-import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.8';
-import { currentStepId, markDirty, sessionEpoch, settings } from './state.js?v=1.0.8';
-import { renderMain, renderSidebar } from './sidebar.js?v=1.0.8';
-import { el } from './validation.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { ENV_CONFIG } from './env.js?v=1.0.9';
+import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
+import { currentStepId, markDirty, sessionEpoch, settings } from './state.js?v=1.0.9';
+import { renderMain, renderSidebar } from './sidebar.js?v=1.0.9';
+import { el } from './validation.js?v=1.0.9';
 export { oauthKeysAvailable, oauthOriginSupported, OAUTH_NEEDS_HTTP_MESSAGE, GOOGLE_OAUTH, OUTLOOK_OAUTH, oauthStatus, oauthDetail, oauthPending, calendarListCache, calendarListError, resetOauthState, hasTokens, rerenderProviderUi, fetchJsonWithTimeout, startGoogleAuth, startOutlookAuth, verifyGoogleToken, refreshGoogleToken, verifyOutlookToken, refreshOutlookToken, fetchCalendarList, ensureOauthStatusChecked, refreshProviderConnection, computeOauthDisplayState, OAUTH_STATE_META, renderOauthStatusEl, renderOauthActions, renderCalendarPicker, };
 function oauthLog(level, message, extra) {
     if (extra !== undefined)

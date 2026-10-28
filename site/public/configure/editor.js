@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.8
-import { TOP_LEVEL_ORDER } from './config.js?v=1.0.8';
-import { resetConnectionTestState } from './connection-tests.js?v=1.0.8';
-import { ensureDefaults, isPlainObject } from './helpers.js?v=1.0.8';
-import { resetOauthState } from './oauth.js?v=1.0.8';
-import { isSchemaLoaded } from './schema.js?v=1.0.8';
-import { disarmRestart, renderMain, renderSidebar, resetRenderedStep } from './sidebar.js?v=1.0.8';
-import { bumpSessionEpoch, markClean, setCurrentStepId, setSettings, settings, unlocked, updateDirty } from './state.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { TOP_LEVEL_ORDER } from './config.js?v=1.0.9';
+import { resetConnectionTestState } from './connection-tests.js?v=1.0.9';
+import { ensureDefaults, isPlainObject } from './helpers.js?v=1.0.9';
+import { resetOauthState } from './oauth.js?v=1.0.9';
+import { isSchemaLoaded } from './schema.js?v=1.0.9';
+import { disarmRestart, renderMain, renderSidebar, resetRenderedStep } from './sidebar.js?v=1.0.9';
+import { bumpSessionEpoch, markClean, setCurrentStepId, setSettings, settings, unlocked, updateDirty } from './state.js?v=1.0.9';
 function enterWizard(isLoaded) {
     ensureDefaults();
     document.getElementById('gate').hidden = true;

@@ -1,5 +1,5 @@
-// BusyTime configurator v1.0.8
-import { getSchema } from './schema.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { getSchema } from './schema.js?v=1.0.9';
 export { TOP_LEVEL_ORDER, STEP_META, NETWORK_DISABLING_TEST_MODES, CALENDAR_OPTIONAL_TEST_MODES, DIRECT_DISPLAY_TYPES, DAY_LABELS, STATE_NAMES, STATE_DESCRIPTIONS, stateOptionLabel, STATE_DEFAULT_COLORS, EVENT_TIME_DEFAULT_COLORS, SUPPORTED_TIMEZONES, isValidTimeZone, DISPLAY_TYPES, DISPLAY_HELP, HOMEASSISTANT_TOKEN_DOCS_URL, FIELD_UI_META, schemaExtraProperties, displaySupportsLedStrip, getExtraFields, isHttpUrl, urlHasPath, appendPathIfBare, };
 const TOP_LEVEL_ORDER = ['wifi', 'schedule', 'displays', 'calendars', 'review'];
 const STEP_META = {

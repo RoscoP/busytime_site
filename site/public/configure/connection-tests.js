@@ -1,10 +1,10 @@
-// BusyTime configurator v1.0.8
-import { DISPLAY_TYPES } from './config.js?v=1.0.8';
-import { configuredDisplayTypes } from './helpers.js?v=1.0.8';
-import { fetchJsonWithTimeout, rerenderProviderUi } from './oauth.js?v=1.0.8';
-import { renderMain, renderSidebar } from './sidebar.js?v=1.0.8';
-import { currentStepId, sessionEpoch, settings } from './state.js?v=1.0.8';
-import { el } from './validation.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { DISPLAY_TYPES } from './config.js?v=1.0.9';
+import { configuredDisplayTypes } from './helpers.js?v=1.0.9';
+import { fetchJsonWithTimeout, rerenderProviderUi } from './oauth.js?v=1.0.9';
+import { renderMain, renderSidebar } from './sidebar.js?v=1.0.9';
+import { currentStepId, sessionEpoch, settings } from './state.js?v=1.0.9';
+import { el } from './validation.js?v=1.0.9';
 export { displayStatus, displayDetail, displayPending, displayStatusEls, displayFieldsFilled, describeFetchError, statusDetailEls, renderStatusDetailEl, setStatusDetailText, statusTitle, isMixedContentBlocked, testDisplayConnection, runDisplayTest, testableDisplayTypes, testAllDisplays, rerenderDisplayUi, ensureDisplayStatusChecked, DISPLAY_STATE_META, fillDisplayStatusEl, renderDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, PROVIDER_TYPES, credStatus, credDetail, credPending, credStatusEls, credFieldsFilled, credRootUrl, testCredAuth, runCredTest, ensureCredStatusChecked, CRED_STATE_META, fillCredStatusEl, renderCredStatusEl, renderCredDetailEl, renderCredRetestButton, retestButtonEl, passwordFieldEl, icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls, resetConnectionTestState, testIcsUrl, runIcsUrlTest, ensureIcsUrlChecked, ICS_STATE_META, fillIcsUrlStatusEl, renderIcsStatusList, icsAggregateStatus, };
 function connDisplayMeta(type) {
     return DISPLAY_TYPES[type];

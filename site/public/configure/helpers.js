@@ -1,6 +1,6 @@
-// BusyTime configurator v1.0.8
-import { DIRECT_DISPLAY_TYPES } from './config.js?v=1.0.8';
-import { settings } from './state.js?v=1.0.8';
+// BusyTime configurator v1.0.9
+import { DIRECT_DISPLAY_TYPES } from './config.js?v=1.0.9';
+import { settings } from './state.js?v=1.0.9';
 export { computeOffsetSeconds, formatOffset, setOffsetDisplay, ensureDefaults, configuredDisplayTypes, activeDisplayTypes, hasHardErrors, };
 export function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
