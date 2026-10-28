@@ -26,6 +26,11 @@ const { title, description } = Astro.props;
   .prose li { margin-bottom: 8px; }
   .prose a { text-decoration: underline; }
   .prose img { display: block; max-width: min(100%, 640px); height: auto; margin: 12px 0; border: 1px solid var(--line); }
+  .prose .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin: 24px 0; }
+  .prose .device { margin: 0; }
+  .prose .device img { width: 100%; max-width: none; margin: 0 0 12px; }
+  .prose .device h2 { margin-top: 0; }
+  .prose .device p { margin: 0; }
   .prose table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0 0 16px; }
   .prose th, .prose td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
   .prose th { background: var(--alt); color: var(--muted); font-weight: 600; }
