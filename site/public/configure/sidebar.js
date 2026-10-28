@@ -2,7 +2,7 @@
 export { isStepLocked, gotoStep, unlockThrough, goNext, goBack, renderSidebar, disarmRestart, renderMain, appendStepIssues, stepActions, renderSubStepActions, resetRenderedStep };
 import { renderCalendarsOverview, renderProviderSubStep } from './calendars-step.js?v=1.0.9';
 import { STEP_META, TOP_LEVEL_ORDER, DISPLAY_TYPES } from './config.js?v=1.0.9';
-import { ensureCredStatusChecked, ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.9';
+import { ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.9';
 import { renderDisplaysOverview, renderDisplaySubStep } from './displays-step.js?v=1.0.9';
 import { restartEditor } from './editor.js?v=1.0.9';
 import { ensureOauthStatusChecked } from './oauth.js?v=1.0.9';
@@ -92,8 +92,6 @@ function renderSidebar() {
                     return;
                 if (cfg.oauth)
                     ensureOauthStatusChecked(type);
-                else if (cfg.testable)
-                    ensureCredStatusChecked(type);
                 else if (cfg.icsOnly)
                     (settings.calendars[type].calendars || []).forEach((url) => ensureIcsUrlChecked(url));
             });

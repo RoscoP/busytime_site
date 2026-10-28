@@ -5,7 +5,7 @@ import { fetchJsonWithTimeout, rerenderProviderUi } from './oauth.js?v=1.0.9';
 import { renderMain, renderSidebar } from './sidebar.js?v=1.0.9';
 import { currentStepId, sessionEpoch, settings } from './state.js?v=1.0.9';
 import { el } from './validation.js?v=1.0.9';
-export { displayStatus, displayDetail, displayPending, displayStatusEls, displayFieldsFilled, describeFetchError, statusDetailEls, renderStatusDetailEl, setStatusDetailText, statusTitle, isMixedContentBlocked, testDisplayConnection, runDisplayTest, testableDisplayTypes, testAllDisplays, rerenderDisplayUi, ensureDisplayStatusChecked, DISPLAY_STATE_META, fillDisplayStatusEl, renderDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, PROVIDER_TYPES, credStatus, credDetail, credPending, credStatusEls, credFieldsFilled, credRootUrl, testCredAuth, runCredTest, ensureCredStatusChecked, CRED_STATE_META, fillCredStatusEl, renderCredStatusEl, renderCredDetailEl, renderCredRetestButton, retestButtonEl, passwordFieldEl, icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls, resetConnectionTestState, testIcsUrl, runIcsUrlTest, ensureIcsUrlChecked, ICS_STATE_META, fillIcsUrlStatusEl, renderIcsStatusList, icsAggregateStatus, };
+export { displayStatus, displayDetail, displayPending, displayStatusEls, displayFieldsFilled, describeFetchError, statusDetailEls, renderStatusDetailEl, setStatusDetailText, statusTitle, isMixedContentBlocked, testDisplayConnection, runDisplayTest, testableDisplayTypes, testAllDisplays, rerenderDisplayUi, ensureDisplayStatusChecked, DISPLAY_STATE_META, fillDisplayStatusEl, renderDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, PROVIDER_TYPES, credStatusEls, credFieldsFilled, credMissingFields, credState, CRED_VERIFY_NOTE, CRED_STATE_META, fillCredStatusEl, renderCredStatusEl, retestButtonEl, passwordFieldEl, icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls, resetConnectionTestState, testIcsUrl, runIcsUrlTest, ensureIcsUrlChecked, ICS_STATE_META, fillIcsUrlStatusEl, renderIcsStatusList, icsAggregateStatus, };
 function connDisplayMeta(type) {
     return DISPLAY_TYPES[type];
 }
@@ -72,14 +72,14 @@ async function testDisplayConnection(type) {
         if (cfg.noCorsFallback) {
             try {
                 await fetchJsonWithTimeout(url, Object.assign({}, options, { mode: 'no-cors' }), 10000);
-                displayDetail[type] = "The device answered, but the browser can't read its status code (no CORS headers).";
+                displayDetail[type] = "The device answered, but the browser won't show its status.";
                 return 'reachable';
             }
             catch (e2) {
                 reason = describeFetchError(e2);
             }
         }
-        displayDetail[type] = `Couldn't reach the device from the browser - likely a CORS restriction, a wrong URL, or a network issue. The BusyTime device itself may still be able to reach it even if this check can't confirm it. Browser reported: ${reason}`;
+        displayDetail[type] = `Your browser couldn't reach this address. It may be a wrong URL, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${reason})`;
         return 'unreachable';
     }
 }
@@ -125,7 +125,7 @@ const DISPLAY_STATE_META = {
     valid: { cls: 'valid', icon: 'check_circle', text: 'Connected, 200 OK' },
     reachable: { cls: 'valid', icon: 'check_circle', text: 'Device responded (status unreadable from browser)' },
     invalid: { cls: 'invalid', icon: 'error', text: 'Responded but not OK' },
-    unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify (network/CORS issue)" },
+    unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify from the browser" },
     unverifiable: { cls: 'unreachable', icon: 'info', text: "Can't be checked from this page" },
 };
 function fillDisplayStatusEl(type) {
@@ -162,107 +162,46 @@ const PROVIDER_TYPES = {
             text: 'Use an App-Specific Password, not your regular iCloud password.',
             linkText: 'Learn how', linkHref: 'https://support.apple.com/en-us/102654',
         },
-        corsNote: "iCloud's CalDAV service often blocks this check in a browser (CORS). If it reports unreachable, credentials are still saved as entered - the BusyTime device validates them directly when it connects.",
     },
     yahoo: {
         label: 'Yahoo', creds: ['username', 'password'], testable: true, fixedUrl: 'https://caldav.calendar.yahoo.com',
         credHint: { text: 'Use an app-specific password from your Yahoo account security settings, not your regular password.' },
-        corsNote: "Yahoo's CalDAV service often blocks this check in a browser (CORS). If it reports unreachable, credentials are still saved as entered - the BusyTime device validates them directly when it connects.",
     },
     caldav: { label: 'Generic CalDAV', creds: ['username', 'password', 'url'], testable: true },
     ics: { label: 'ICS Feed URLs', icsOnly: true },
 };
-const credStatus = { apple: 'unknown', yahoo: 'unknown', caldav: 'unknown' };
-const credDetail = { apple: '', yahoo: '', caldav: '' };
-const credPending = { apple: false, yahoo: false, caldav: false };
+const CRED_VERIFY_NOTE = "Your browser can't check these sign-in details for this service, so they're accepted as entered. BusyTime will try them from the device when it connects.";
+const CRED_FIELD_LABELS = { username: 'Username', password: 'Password', url: 'Server URL' };
 const credStatusEls = {};
+function credMissingFields(type) {
+    const auth = settings.calendars[type] && settings.calendars[type].auth;
+    return PROVIDER_TYPES[type].creds.filter((key) => !(auth && auth[key])).map((key) => CRED_FIELD_LABELS[key] || key);
+}
 function credFieldsFilled(type) {
-    const auth = settings.calendars[type] && settings.calendars[type].auth;
-    const cfg = PROVIDER_TYPES[type];
-    return !!(auth && cfg.creds.every((key) => auth[key]));
+    return credMissingFields(type).length === 0;
 }
-function credRootUrl(type) {
-    const auth = settings.calendars[type] && settings.calendars[type].auth;
-    return (auth && auth.url) || PROVIDER_TYPES[type].fixedUrl;
-}
-async function testCredAuth(type, rootUrl) {
-    const auth = settings.calendars[type].auth;
-    try {
-        const basic = btoa(unescape(encodeURIComponent(`${auth.username}:${auth.password}`)));
-        const { response } = await fetchJsonWithTimeout(rootUrl, {
-            method: 'PROPFIND',
-            headers: { Authorization: `Basic ${basic}`, Depth: '0', 'Content-Type': 'application/xml' },
-            body: '<?xml version="1.0"?><D:propfind xmlns:D="DAV:"><D:prop><D:current-user-principal/></D:prop></D:propfind>',
-        }, 10000);
-        if (response.status === 401 || response.status === 403) {
-            credDetail[type] = `HTTP ${response.status} - check the username/password.`;
-            return 'invalid';
-        }
-        if (response.ok || response.status === 207) {
-            credDetail[type] = '';
-            return 'valid';
-        }
-        credDetail[type] = `HTTP ${response.status}`;
-        return 'unreachable';
-    }
-    catch (e) {
-        credDetail[type] = `Couldn't reach the server from the browser - likely a CORS restriction on this server (common for CalDAV servers not built for browser access), a wrong URL, or a network issue. The device may still be able to connect directly even if this check can't confirm it. Browser reported: ${describeFetchError(e)}`;
-        return 'unreachable';
-    }
-}
-async function runCredTest(type, rootUrl) {
-    const epoch = sessionEpoch;
-    credPending[type] = true;
-    credStatus[type] = 'checking';
-    credDetail[type] = '';
-    fillCredStatusEl(type);
-    const result = await testCredAuth(type, rootUrl);
-    if (epoch !== sessionEpoch)
-        return;
-    credStatus[type] = result;
-    credPending[type] = false;
-    rerenderProviderUi(type);
-}
-function ensureCredStatusChecked(type) {
-    if (!credFieldsFilled(type)) {
-        credStatus[type] = 'unknown';
-        return;
-    }
-    if (credStatus[type] !== 'unknown')
-        return;
-    runCredTest(type, credRootUrl(type));
+function credState(type) {
+    return credFieldsFilled(type) ? 'valid' : 'incomplete';
 }
 const CRED_STATE_META = {
-    unknown: { cls: 'unknown', icon: 'radio_button_unchecked', text: 'Not yet tested' },
-    checking: { cls: 'checking', icon: 'sync', text: 'Checking\u2026' },
-    valid: { cls: 'valid', icon: 'check_circle', text: 'Connected, credentials valid' },
-    invalid: { cls: 'invalid', icon: 'error', text: 'Invalid username or password' },
-    unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify (network/CORS issue)" },
+    valid: { cls: 'valid', icon: 'check_circle', text: 'All details entered - BusyTime will verify them when it connects' },
+    incomplete: { cls: 'unreachable', icon: 'warning', text: 'Enter all details so BusyTime can connect' },
 };
 function fillCredStatusEl(type) {
     const wrap = credStatusEls[type];
     if (!wrap)
         return;
-    const meta = CRED_STATE_META[credStatus[type]] || CRED_STATE_META.unknown;
-    wrap.className = 'material-symbols-outlined status-icon status-icon--' + meta.cls + (meta.cls === 'checking' ? ' spin' : '');
+    const meta = CRED_STATE_META[credState(type)];
+    wrap.className = 'material-symbols-outlined status-icon status-icon--' + meta.cls;
     wrap.textContent = meta.icon;
-    wrap.title = statusTitle(meta, credDetail[type]);
-    wrap.setAttribute('aria-label', wrap.title);
-    setStatusDetailText('cred:' + type, credStatus[type], credDetail[type]);
+    wrap.title = meta.text;
+    wrap.setAttribute('aria-label', meta.text);
 }
 function renderCredStatusEl(type) {
     const wrap = el('span', { role: 'status', 'aria-live': 'polite' });
     credStatusEls[type] = wrap;
     fillCredStatusEl(type);
     return wrap;
-}
-function renderCredDetailEl(type) {
-    const p = renderStatusDetailEl('cred:' + type);
-    setStatusDetailText('cred:' + type, credStatus[type], credDetail[type]);
-    return p;
-}
-function renderCredRetestButton(type) {
-    return retestButtonEl(credPending[type], credFieldsFilled(type), () => runCredTest(type, credRootUrl(type)));
 }
 function retestButtonEl(pending, filled, onClick, readyTitle) {
     const label = pending ? 'Testing connection' : (filled ? (readyTitle || 'Test connection') : 'Fill in all fields before testing');
@@ -299,7 +238,6 @@ function resetConnectionTestState() {
         icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls].forEach((map) => {
         Object.keys(map).forEach((key) => delete map[key]);
     });
-    Object.keys(credStatus).forEach((type) => { credStatus[type] = 'unknown'; credDetail[type] = ''; credPending[type] = false; });
 }
 async function testIcsUrl(url) {
     const controller = new AbortController();
@@ -319,7 +257,7 @@ async function testIcsUrl(url) {
         return 'invalid';
     }
     catch (e) {
-        icsUrlDetail[url] = `Couldn't reach the URL from the browser - likely a CORS restriction, a wrong URL, or a network issue. The device may still be able to fetch it directly even if this check can't confirm it. Browser reported: ${describeFetchError(e)}`;
+        icsUrlDetail[url] = `Your browser couldn't read this URL. It may be a wrong URL, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${describeFetchError(e)})`;
         return 'unreachable';
     }
     finally {
@@ -351,7 +289,7 @@ const ICS_STATE_META = {
     checking: { cls: 'checking', icon: 'sync', text: 'Checking\u2026' },
     valid: { cls: 'valid', icon: 'check_circle', text: 'Feed reachable and valid' },
     invalid: { cls: 'invalid', icon: 'error', text: 'Not a valid .ics feed' },
-    unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify (network/CORS issue)" },
+    unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify from the browser" },
 };
 function fillIcsUrlStatusEl(url) {
     const wrap = icsUrlStatusEls[url];

@@ -1,6 +1,6 @@
 // BusyTime configurator v1.0.9
 import { isHttpUrl } from './config.js?v=1.0.9';
-import { CRED_STATE_META, credStatus, ensureCredStatusChecked, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredDetailEl, renderCredRetestButton, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.9';
+import { CRED_STATE_META, CRED_VERIFY_NOTE, credState, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.9';
 import { computeOauthDisplayState, ensureOauthStatusChecked, hasTokens, OAUTH_STATE_META, renderCalendarPicker, renderOauthActions, renderOauthStatusEl, } from './oauth.js?v=1.0.9';
 import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.9';
 import { settings } from './state.js?v=1.0.9';
@@ -10,7 +10,6 @@ function renderCalendarsOverview(main) {
     const providerTypes = PROVIDER_TYPES;
     const oauthStateMeta = OAUTH_STATE_META;
     const credStateMeta = CRED_STATE_META;
-    const credStatuses = credStatus;
     main.appendChild(el('h2', { class: 'step-title' }, ['Calendar Providers']));
     main.appendChild(el('p', { class: 'step-desc' }, ['Add the calendar providers to monitor. Google and Outlook use OAuth sign-in; the others take plain credentials.']));
     appendStepIssues(main, 'calendars');
@@ -25,8 +24,7 @@ function renderCalendarsOverview(main) {
             label.appendChild(el('span', { class: 'oauth-dot oauth-dot--' + meta.cls, title: meta.text, 'aria-label': meta.text }, []));
         }
         else if (cfg.testable) {
-            ensureCredStatusChecked(type);
-            const meta = credStateMeta[credStatuses[type]] || credStateMeta.unknown;
+            const meta = credStateMeta[credState(type)];
             label.appendChild(el('span', { class: 'oauth-dot oauth-dot--' + meta.cls, title: meta.text, 'aria-label': meta.text }, []));
         }
         else if (cfg.icsOnly) {
@@ -62,7 +60,6 @@ function renderCalendarsOverview(main) {
 }
 function renderProviderSubStep(main, type) {
     const cfg = PROVIDER_TYPES[type] || {};
-    const credStatuses = credStatus;
     const target = settings.calendars[type];
     if (!target.calendars)
         target.calendars = [];
@@ -91,13 +88,9 @@ function renderProviderSubStep(main, type) {
             }
             main.appendChild(hint);
         }
-        if (cfg.testable)
-            ensureCredStatusChecked(type);
         cfg.creds.forEach((key) => {
-            const resetCredStatus = () => { if (cfg.testable) {
-                credStatuses[type] = 'unknown';
-                fillCredStatusEl(type);
-            } };
+            const resetCredStatus = () => { if (cfg.testable)
+                fillCredStatusEl(type); };
             let control;
             if (key === 'password') {
                 control = passwordFieldEl(auth[key] || '', (val) => { auth[key] = val; resetCredStatus(); });
@@ -108,21 +101,19 @@ function renderProviderSubStep(main, type) {
                 control = input;
             }
             if (cfg.testable && key === 'url')
-                control = el('div', { class: 'input-with-status' }, [control, renderCredStatusEl(type), renderCredRetestButton(type), renderCredDetailEl(type)]);
+                control = el('div', { class: 'input-with-status' }, [control, renderCredStatusEl(type)]);
             main.appendChild(fieldRow(key === 'url' ? 'Server URL' : (key.charAt(0).toUpperCase() + key.slice(1)), '', control));
         });
         if (cfg.testable && cfg.fixedUrl && !cfg.creds.includes('url')) {
             main.appendChild(fieldRow('Server', '', el('div', { class: 'input-with-status' }, [
                 el('span', { class: 'field-help' }, [cfg.fixedUrl]),
                 renderCredStatusEl(type),
-                renderCredRetestButton(type),
-                renderCredDetailEl(type),
             ])));
         }
-        if (cfg.corsNote && !(cfg.testable && (credStatuses[type] === 'valid' || credStatuses[type] === 'invalid'))) {
+        if (cfg.testable) {
             main.appendChild(el('div', { class: 'oauth-status' }, [
                 el('span', { class: 'material-symbols-outlined' }, ['info']),
-                el('span', {}, [cfg.corsNote]),
+                el('span', {}, [CRED_VERIFY_NOTE]),
             ]));
         }
     }

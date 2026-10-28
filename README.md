@@ -18,8 +18,7 @@ Pages and assets use root-relative paths (`/guide`, `/img/busytime.png`), so
 `docs/index.html` (or `site/dist/index.html`) must be opened through a local
 web server, never by double-clicking the file. Opening it directly via
 `file://` breaks the logo and every nav link, because those paths resolve
-against the filesystem root instead of the site folder. This isn't new to
-Astro — the previous Docusaurus build had the same requirement.
+against the filesystem root instead of the site folder.
 
 To preview correctly, use one of:
 
@@ -29,7 +28,7 @@ To preview correctly, use one of:
 
 ## Editing content
 
-Page text is Markdown in `site/src/content/pages/`. See [site/STYLE_GUIDE.md](site/STYLE_GUIDE.md) for content rules and [site/CSS_ASTRO_CONVENTIONS.md](site/CSS_ASTRO_CONVENTIONS.md) for layout and CSS rules.
+Page text is Markdown in `site/src/content/pages/`, loaded as an Astro content collection (schema in `site/src/content.config.ts`). Each file needs `title` frontmatter and may have `description`. `src/pages/[...slug].astro` renders every file at `/<filename>` using the `Doc` layout, except `home.md`, which is the index page. To add a page, create a new `.md` file there with that frontmatter and link to it from the nav in `src/layouts/Base.astro`. Static assets (images, `CNAME`) go in `site/public/` and are copied as-is. See [site/STYLE_GUIDE.md](site/STYLE_GUIDE.md) for content rules and [site/CSS_ASTRO_CONVENTIONS.md](site/CSS_ASTRO_CONVENTIONS.md) for layout and CSS rules.
 
 ## Configuration tool
 

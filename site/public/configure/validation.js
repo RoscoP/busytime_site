@@ -1,6 +1,6 @@
 // BusyTime configurator v1.0.9
 import { CALENDAR_OPTIONAL_TEST_MODES, DISPLAY_TYPES, FIELD_UI_META, isHttpUrl, isValidTimeZone, STEP_META, TOP_LEVEL_ORDER, urlHasPath } from './config.js?v=1.0.9';
-import { credDetail, credStatus, displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
+import { displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
 import { activeDisplayTypes, configuredDisplayTypes } from './helpers.js?v=1.0.9';
 import { computeOauthDisplayState, oauthDetail } from './oauth.js?v=1.0.9';
 import { getSchema } from './schema.js?v=1.0.9';
@@ -135,13 +135,7 @@ function getValidationBuckets() {
         const cfg = PROVIDER_TYPES[type] || {};
         const label = cfg.label || type;
         const stepId = 'calendars:' + type;
-        if (cfg.testable) {
-            if (credStatus[type] === 'invalid')
-                push(stepId, 'error', `${label}: invalid username or password.`);
-            else if (credStatus[type] === 'unreachable')
-                push(stepId, 'warning', `${label}: couldn't verify the connection - ${credDetail[type] || 'check the URL/network.'}`);
-        }
-        else if (cfg.oauth) {
+        if (cfg.oauth) {
             const state = computeOauthDisplayState(type);
             if (state === 'invalid')
                 push(stepId, 'error', `${label}: token invalid - reauthorize.`);
