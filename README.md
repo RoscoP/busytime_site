@@ -33,4 +33,9 @@ Page text is Markdown in `site/src/content/pages/`. See [site/STYLE_GUIDE.md](si
 
 ## Configuration tool
 
-The configuration tool is a pre-built, self-contained app in `site/public/ConfigureBusyTime.html`. The site embeds it at `/configure`. `public/oauth-callback.html` is its OAuth redirect target and must stay at `/oauth-callback.html`.
+The configuration tool is built from `src/webapp` in the busytime repo and served at `/configure`, natively inside the site layout. Its built files (`app.js`, `app.css`, `callback.js`) live in `site/public/configure/` and are committed here, so the site builds without the busytime repo. Do not edit them by hand. To update them, run `Deploy-Webapp.ps1` from the busytime repo:
+
+* `.\Deploy-Webapp.ps1 -Serve`: builds the tool, copies it here and runs the dev server for a preview.
+* `.\Deploy-Webapp.ps1 -Deploy`: bumps the webapp version, copies the tool here, runs `site/Build.ps1` to refresh `docs/`, and sets a jj description if the change has none. It never pushes; review with `jj diff` and push yourself.
+
+`src/pages/oauth-callback.html.astro` is the OAuth redirect page. It must stay at `/oauth-callback.html`, the URL registered with Google and Microsoft; `astro.config.mjs` flattens it to a real file. `public/ConfigureBusyTime.html` redirects the retired standalone tool's old URL to `/configure`.

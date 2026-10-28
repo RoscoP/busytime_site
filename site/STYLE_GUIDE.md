@@ -14,7 +14,7 @@ Tone of the design: formal, direct, restrained. Reads like product documentation
 | Long-form page styling (`.prose`) | `src/layouts/Doc.astro` (wraps `Base`) | Design changes only |
 | Page copy | `src/content/pages/*.md` (frontmatter + Markdown) | Anyone |
 | Home page structure | `src/pages/index.astro` | Developers |
-| Static assets | `public/` (`/img/...`, configurator `lib/`, `ConfigureBusyTime.html`) | Anyone |
+| Static assets | `public/` (`/img/...`, `configure/` configurator files) | Anyone |
 
 Content is Markdown. Styling is applied by element selectors, so authors never add classes or inline styles in Markdown.
 
@@ -92,7 +92,8 @@ Layout: single column, max width 960px, 24px side padding. Section spacing 48px.
 
 ## 7. Do not touch
 
-- `public/ConfigureBusyTime.html`, `public/lib/**`, `public/oauth-callback.html`: the pre-built configurator app and OAuth callback. Copy through unchanged.
+- `public/configure/**`: the configurator (`app.js`, `app.css`, `callback.js`), built in the busytime repo (`src/webapp`) and copied here by `Deploy-Webapp.ps1`. Change it there, never by hand. Its page is `src/pages/configure.astro`; the OAuth redirect page is `src/pages/oauth-callback.html.astro`, which must keep producing exactly `/oauth-callback.html`.
+- `public/ConfigureBusyTime.html`: redirect stub for the retired standalone configurator. Leave in place.
 - `public/CNAME`, `.nojekyll` and `.well-known/`: required for hosting and OAuth.
 
 ## 8. Checklist before finishing

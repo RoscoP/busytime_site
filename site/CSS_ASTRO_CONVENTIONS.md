@@ -6,9 +6,9 @@ Audience: agents and developers writing or modifying `.astro` and CSS files. For
 
 - Astro 5, static output (`output: 'static'`, the default). No SSR, no adapters.
 - Plain CSS only, written in Astro `<style>` blocks. No Tailwind, Sass, CSS-in-JS or UI frameworks.
-- No client-side JavaScript on site pages. Do not add `<script>` tags or framework islands (React, Vue, etc.).
+- No client-side JavaScript on site pages. Do not add `<script>` tags or framework islands (React, Vue, etc.). The only exceptions are `/configure` and `/oauth-callback.html` (section 11).
 - No runtime dependencies beyond `astro` and `@astrojs/sitemap`. Do not add npm packages for styling or layout.
-- The pre-built configurator in `public/` is out of scope and must not be modified.
+- The configurator in `public/configure/` is built elsewhere (the busytime repo) and must not be edited here; its markup is created at runtime inside `<div id="busytime-app">`.
 
 ## 2. Project layout
 
@@ -21,8 +21,10 @@ src/
     Doc.astro              wraps Base; renders title as H1 and body in .prose
   pages/
     index.astro            home page (structured, not pure Markdown)
+    configure.astro        hosts the configurator in a mount div (loads public/configure/*)
+    oauth-callback.html.astro  OAuth popup redirect page, built to /oauth-callback.html
     [...slug].astro        renders every other `pages` entry with Doc.astro
-public/                    served as-is: img/, configurator, CNAME, .well-known
+public/                    served as-is: img/, configure/ (built configurator), CNAME, .well-known
 ```
 
 Rules:
@@ -66,6 +68,9 @@ Required tokens:
 | `--status-busy` | `#ff0000` |
 | `--status-off` | `#000000` |
 | `--status-error` | `#0000ff` |
+| `--success`, `--success-bg` | `#1e6b2b`, `#e8f5e9` (configurator only) |
+| `--warning`, `--warning-bg` | `#8a5300`, `#fff4e0` (configurator and notices) |
+| `--error`, `--error-bg` | `#b3261e`, `#fdecea` (configurator and notices) |
 | `--measure` | `60ch` (maximum paragraph width) |
 | `--page-width` | `960px` |
 
@@ -127,7 +132,7 @@ Content schema (`content.config.ts`): `title` required string, `description` opt
 
 ## 9. Performance and output
 
-- No web fonts, no external requests, no third-party scripts (other than analytics when explicitly added to `Base.astro`).
+- No web fonts, no external requests, no third-party scripts (other than analytics when explicitly added to `Base.astro`). `/configure` is exempt (section 11).
 - Images in `public/` should be PNG or WebP and under 150 KB each.
 - The build output (`dist/`) must be self-contained static files suitable for copying into the GitHub Pages folder.
 
@@ -146,10 +151,15 @@ Run after any change:
 
 ## 11. Approved exceptions
 
-- `@astrojs/sitemap` is the only integration beyond `astro` (generates `sitemap-index.xml`; `Build.ps1` also copies it to `sitemap.xml`).
+- `@astrojs/sitemap` is the only integration beyond `astro` and the inline build hook described below (generates `sitemap-index.xml`; `Build.ps1` also copies it to `sitemap.xml`).
 - Google Analytics (`G-TGQCDHSP9R`) is loaded from `Base.astro`, and only when `location.hostname === 'busytime.org'`.
 - `--status-error` (`#0000ff`) represents the pulsing blue/red error state as a static swatch.
 - H3 in `.prose` is `1.1rem`.
 - `Doc.astro` does not append " – BusyTime" to a title that already contains "BusyTime".
 - Element widths (the 160px home logo column, the 96px mobile logo, swatch sizes, `min(100%, 640px)` prose images) are not spacing and are exempt from the scale.
-- `/configure` embeds the pre-built `/ConfigureBusyTime.html` in an iframe. Restyling that app to match this guide is future work.
+- `/configure` hosts the configurator natively (no iframe). The app is built in the busytime repo (`src/webapp`) and copied to `public/configure/` by `Deploy-Webapp.ps1`. This page and `/oauth-callback.html` are the only pages with client JavaScript, loaded through `<script is:inline src=... defer>`.
+- `public/configure/app.css` is the one stylesheet file. It uses only the site tokens (plus the success/warning/error tokens above). The app builds its DOM at runtime, so Astro scoped styles cannot reach it; its element selectors are prefixed with `#busytime-app` instead. It follows the radius, shadow, spacing, font-size and breakpoint rules in this document.
+- The configurator makes external requests: Material Symbols Outlined icon font from Google Fonts (a `<link>` in `configure.astro`, loaded on that page only), and the Google/Microsoft sign-in and calendar APIs. The no-external-requests rule in section 9 does not apply to `/configure`.
+- The configurator shows more than one button per page: one primary `.btn` per step and bordered square `.btn-secondary` buttons for other actions.
+- `astro.config.mjs` has an inline `flatten-oauth-callback` build hook. The OAuth redirect URI registered with Google and Microsoft is exactly `/oauth-callback.html`, and directory-format output would otherwise create `oauth-callback.html/index.html`. The sitemap excludes the page.
+- `public/ConfigureBusyTime.html` is a redirect stub to `/configure` for the retired standalone configurator.

@@ -23,6 +23,7 @@ const nav = [
     {description && <meta name="description" content={description} />}
     <link rel="icon" href="/img/busytime.ico" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <slot name="head" />
     <title>{title}</title>
     <script is:inline>
       // Analytics only on the production host, so local previews are not counted.
@@ -74,6 +75,12 @@ const nav = [
     --status-busy: #ff0000;
     --status-error: #0000ff;
     --status-off: #000000;
+    --success: #1e6b2b;
+    --success-bg: #e8f5e9;
+    --warning: #8a5300;
+    --warning-bg: #fff4e0;
+    --error: #b3261e;
+    --error-bg: #fdecea;
     --measure: 60ch;
     --page-width: 960px;
   }

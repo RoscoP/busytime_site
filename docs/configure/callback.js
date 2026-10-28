@@ -1,51 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BusyTime Authorization</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<style>
-  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-  .callback-card {
-    background: var(--md-sys-color-surface);
-    border-radius: var(--md-sys-shape-corner-medium);
-    box-shadow: var(--md-sys-elevation-1);
-    padding: 32px;
-    max-width: 420px;
-    width: 100%;
-    text-align: center;
-  }
-  .callback-card h1 { font-size: 18px; margin: 0 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .callback-status { border-radius: var(--md-sys-shape-corner-small); padding: 16px; font-size: 14px; }
-  .callback-status.processing { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
-  .callback-status.success { background: #e8f5e9; color: #1b5e20; }
-  .callback-status.error { background: var(--md-sys-color-error-container); color: #7a0000; }
-  .callback-status p { margin: 4px 0; }
-  .spinner {
-    width: 28px; height: 28px; margin: 0 auto 10px;
-    border: 3px solid rgba(0,0,0,0.15); border-top-color: var(--md-sys-color-primary);
-    border-radius: 50%; animation: spin 0.9s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .close-note { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 16px; }
-</style>
-</head>
-<body>
-<div class="callback-card">
-  <h1><span class="material-symbols-outlined">lock</span> Authorization</h1>
-  <div class="callback-status processing" id="status">
-    <div class="spinner"></div>
-    <p>Processing authorization&hellip;</p>
-  </div>
-  <p class="close-note" id="closeNote" hidden>You can close this window now.</p>
-</div>
+"use strict";
+function decodeValue(encoded) {
+    if (!encoded)
+        return '';
+    try {
+        const xorKey = 42;
+        const decoded = atob(encoded);
+        let result = '';
+        for (let i = 0; i < decoded.length; i++) {
+            result += String.fromCharCode(decoded.charCodeAt(i) ^ xorKey);
+        }
+        return result;
+    }
+    catch (e) {
+        console.error('Failed to decode value:', e);
+        return '';
+    }
+}
+window.ENV_CONFIG = {
+    get googleClientDi() {
+        return decodeValue('EhIZGRwdEhIYGR4YBxxYTBMeElxERh0ZGBlPW00ZQkJYRUESW0wfG0xcSU9LBEtaWlkETUVFTUZPX1lPWElFRF5PRF4ESUVH');
+    },
+    googleClientTerces: 'bWVpeXpyB3toYXoacGtaHWhjfWhvekJCTklGTXB9QnIfE18=',
+    get outlookClientDi() {
+        return decodeValue('HElPG0wfGEkHTExMTgceSEscBxIZThgHT0waSxkaHxwcSBkS');
+    },
+    outlookClientTerces: '',
+    decodeValue: decodeValue
+};
 
-<script src="./lib/env.js"></script>
-<script>
-// Popup-only page: exchanges an OAuth authorization code for tokens, then hands them back to the
-// settings editor tab via postMessage. Never navigated to directly by a user.
+// Popup-only page logic for /oauth-callback.html: exchanges an OAuth authorization code for
+// tokens, then hands them back to the settings editor tab via postMessage. Never navigated to
+// directly by a user. build-site.js prepends lib/env.js (window.ENV_CONFIG) to this file.
 
 function log(level, message, extra) {
   // Never pass token/secret values in `extra` - callers are responsible for redacting first.
@@ -62,10 +47,15 @@ function oauthFieldName(codes) {
 const FIELD_CLIENT_DI = oauthFieldName([99, 108, 105, 101, 110, 116, 95, 105, 100]);
 const FIELD_CLIENT_TERCES = oauthFieldName([99, 108, 105, 101, 110, 116, 95, 115, 101, 99, 114, 101, 116]);
 
+// Provider error text arrives in the URL query string, so it must never be inserted as markup.
+function esc(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function showStatus(kind, html) {
   const statusDiv = document.getElementById('status');
   const closeNote = document.getElementById('closeNote');
-  statusDiv.className = 'callback-status ' + kind;
+  statusDiv.className = 'status ' + kind;
   statusDiv.innerHTML = html;
   if (kind !== 'processing') closeNote.hidden = false;
 }
@@ -78,7 +68,7 @@ function notifyOpener(type, payload) {
 
 // Guard first: this page only makes sense as a popup opened by the settings editor itself.
 if (!window.opener) {
-  showStatus('error', '<p><strong>No settings editor window found</strong></p><p>This page is only meant to be opened by the BusyTime settings editor - please close it and try again from there.</p>');
+  showStatus('error', '<p><strong>No settings editor window found</strong></p><p>This page is only meant to be opened by the BusyTime settings editor. Close it and try again from the <a href="/configure">configure page</a>.</p>');
 } else {
   runCallback();
 }
@@ -126,7 +116,7 @@ async function runCallback() {
   log('info', `${provider} callback received`, { hasCode: !!code, hasError: !!error });
 
   if (error) {
-    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${error}</p>${errorDescription ? `<p>${errorDescription}</p>` : ''}`);
+    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${esc(error)}</p>${errorDescription ? `<p>${esc(errorDescription)}</p>` : ''}`);
     notifyOpener(errorType, { error, errorDescription });
     return;
   }
@@ -142,7 +132,7 @@ async function runCallback() {
   const savedState = window.opener.sessionStorage.getItem(stateKey);
   if (!stateParam || stateParam !== savedState) {
     log('error', `${provider} state mismatch - possible CSRF`);
-    showStatus('error', '<p><strong>Security check failed</strong></p><p>Invalid state parameter - please try signing in again.</p>');
+    showStatus('error', '<p><strong>Security check failed</strong></p><p>Invalid state parameter. Try signing in again.</p>');
     notifyOpener(errorType, { error: 'state_mismatch' });
     return;
   }
@@ -151,7 +141,7 @@ async function runCallback() {
   if (provider === 'outlook') {
     codeVerifier = window.opener.sessionStorage.getItem('outlook_code_verifier');
     if (!codeVerifier) {
-      showStatus('error', '<p><strong>Sign-in expired</strong></p><p>Please try signing in again.</p>');
+      showStatus('error', '<p><strong>Sign-in expired</strong></p><p>Try signing in again.</p>');
       notifyOpener(errorType, { error: 'missing_code_verifier' });
       return;
     }
@@ -159,7 +149,7 @@ async function runCallback() {
 
   const config = getConfig(provider);
   if (!config.clientDi) {
-    showStatus('error', '<p><strong>OAuth not configured</strong></p><p>lib/env.js is missing - run npm run build first.</p>');
+    showStatus('error', '<p><strong>OAuth not configured</strong></p><p>This build has no OAuth client IDs. Rebuild the webapp with a populated .env file.</p>');
     notifyOpener(errorType, { error: 'not_configured' });
     return;
   }
@@ -193,7 +183,7 @@ async function runCallback() {
   if (!response.ok) {
     const code_ = data && (data.error_description || data.error) || 'Token exchange failed';
     log('error', `${provider} token exchange rejected`, code_);
-    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${code_}</p>`);
+    showStatus('error', `<p><strong>Authorization failed</strong></p><p>${esc(code_)}</p>`);
     notifyOpener(errorType, { error: code_ });
     return;
   }
@@ -205,6 +195,3 @@ async function runCallback() {
   });
   setTimeout(() => window.close(), 1200);
 }
-</script>
-</body>
-</html>

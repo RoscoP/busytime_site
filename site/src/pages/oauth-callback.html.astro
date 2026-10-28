@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<!-- Must stay at /oauth-callback.html: that exact URL is registered as the OAuth redirect URI with Google and Microsoft. -->
+<Base title="Authorization – BusyTime" description="Completes sign-in for the BusyTime configuration tool.">
+  <Fragment slot="head"><meta name="robots" content="noindex" /></Fragment>
+  <main>
+    <h1>Authorization</h1>
+    <div id="status" class="status processing" role="status">
+      <p>Processing authorization&hellip;</p>
+    </div>
+    <p id="closeNote" class="close-note" hidden>You can close this window now.</p>
+  </main>
+  <!-- Built from the busytime repo (src/webapp) and copied here by Deploy-Webapp.ps1. -->
+  <script is:inline src="/configure/callback.js" defer></script>
+</Base>
+
+<style>
+  main { max-width: var(--page-width); margin: 0 auto; padding: 48px 24px 0; }
+  h1 { font-size: 2.4rem; line-height: 1.2; margin: 0 0 24px; }
+  .status { max-width: var(--measure); border: 1px solid var(--line); padding: 16px; }
+  .status :global(p) { margin: 0 0 8px; }
+  .status :global(p:last-child) { margin-bottom: 0; }
+  .success { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .error { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+  .close-note { color: var(--muted); font-size: 0.9rem; margin: 16px 0 0; }
+  @media (max-width: 700px) { h1 { font-size: 1.6rem; } }
+</style>
