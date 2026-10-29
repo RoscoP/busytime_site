@@ -1,8 +1,8 @@
-// BusyTime configurator v1.0.9
-import './shell.js?v=1.0.9';
-import { loadFromFile, markDirtyAndRefreshSidebar, showGateError, startNew } from './editor.js?v=1.0.9';
-import { loadSchema } from './schema.js?v=1.0.9';
-import { dirty } from './state.js?v=1.0.9';
+// BusyTime configurator v1.0.10
+import './shell.js?v=1.0.10';
+import { loadFromFile, markDirtyAndRefreshSidebar, showGateError, startNew } from './editor.js?v=1.0.10';
+import { loadSchema } from './schema.js?v=1.0.10';
+import { dirty } from './state.js?v=1.0.10';
 document.getElementById('btn-new').addEventListener('click', startNew);
 document.getElementById('file-input').addEventListener('change', (e) => {
     const files = e.target.files;

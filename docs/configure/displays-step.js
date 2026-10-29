@@ -1,9 +1,10 @@
-// BusyTime configurator v1.0.9
-import { DISPLAY_HELP, DISPLAY_TYPES, displaySupportsLedStrip, EVENT_TIME_DEFAULT_COLORS, getExtraFields, HOMEASSISTANT_TOKEN_DOCS_URL, STATE_DEFAULT_COLORS, STATE_DESCRIPTIONS, STATE_NAMES, stateOptionLabel, } from './config.js?v=1.0.9';
-import { DISPLAY_STATE_META, displayDetail, displayFieldsFilled, displayPending, displayStatus, ensureDisplayStatusChecked, fillDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, renderDisplayStatusEl, statusTitle, testableDisplayTypes, testAllDisplays, } from './connection-tests.js?v=1.0.9';
-import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.9';
-import { settings } from './state.js?v=1.0.9';
-import { el, fieldRow, helpLinkEl, hexToRgb, renderSubStepTitle, rgbToHex } from './validation.js?v=1.0.9';
+// BusyTime configurator v1.0.10
+import { DISPLAY_HELP, DISPLAY_TYPES, displaySupportsLedStrip, EVENT_TIME_DEFAULT_COLORS, getExtraFields, HOMEASSISTANT_TOKEN_DOCS_URL, isMultiDisplayType, STATE_DEFAULT_COLORS, STATE_DESCRIPTIONS, STATE_NAMES, stateOptionLabel, } from './config.js?v=1.0.10';
+import { DISPLAY_STATE_META, displayDetail, displayFieldsFilled, displayPending, displayStatus, ensureDisplayStatusChecked, fillDisplayStatusEl, forgetDisplayStatuses, renderDisplayDetailEl, renderDisplayRetestButton, renderDisplayStatusEl, statusTitle, testableDisplayKeys, testAllDisplays, } from './connection-tests.js?v=1.0.10';
+import { addDisplayInstance, configuredDisplayKeys, displayInstances, displayLabel, getDisplayConfig, parseDisplayKey, removeDisplayInstance, } from './helpers.js?v=1.0.10';
+import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.10';
+import { settings } from './state.js?v=1.0.10';
+import { el, fieldRow, helpLinkEl, hexToRgb, renderSubStepTitle, rgbToHex } from './validation.js?v=1.0.10';
 export { renderDisplaysOverview, renderDisplaySubStep, renderBrightnessRow, renderCommonDisplayFields, booleanSettingRow, renderColorsSection, colorPickerEl };
 function renderDisplaysOverview(main) {
     const displayStateMeta = DISPLAY_STATE_META;
@@ -18,26 +19,34 @@ function renderDisplaysOverview(main) {
         el('span', {}, ['Default Display Settings']),
         el('span', { class: 'material-symbols-outlined', 'aria-hidden': 'true' }, ['chevron_right']),
     ]));
-    Object.keys(settings.displays).filter((k) => k !== 'default' && k !== 'all').forEach((type) => {
+    configuredDisplayKeys().forEach((key) => {
+        const { type } = parseDisplayKey(key);
         const cfg = DISPLAY_TYPES[type] || {};
-        const label = el('button', { class: 'type-card-link', type: 'button', onclick: () => gotoStep('displays:' + type) }, [cfg.label || type]);
+        const name = displayLabel(key);
+        const label = el('button', { class: 'type-card-link', type: 'button', onclick: () => gotoStep('displays:' + key) }, [name]);
         const controls = el('div', { class: 'type-card-controls' });
         if (cfg.testable) {
-            ensureDisplayStatusChecked(type);
-            const meta = displayStateMeta[displayStatuses[type]] || displayStateMeta.unknown;
-            const title = statusTitle(meta, displayDetails[type]);
+            ensureDisplayStatusChecked(key);
+            const meta = displayStateMeta[displayStatuses[key]] || displayStateMeta.unknown;
+            const title = statusTitle(meta, displayDetails[key]);
             controls.appendChild(el('span', { class: 'material-symbols-outlined status-icon status-icon--' + meta.cls + (meta.cls === 'checking' ? ' spin' : ''), title, 'aria-label': title }, [meta.icon]));
         }
         const card = el('div', { class: 'type-card' }, [label, controls]);
-        const removeBtn = el('button', { class: 'icon-only btn-secondary', type: 'button', 'aria-label': `Remove ${cfg.label || type}`, title: `Remove ${cfg.label || type}` }, [el('span', { class: 'material-symbols-outlined', 'aria-hidden': 'true' }, ['delete'])]);
-        removeBtn.addEventListener('click', (e) => { e.stopPropagation(); delete settings.displays[type]; renderSidebar(); renderMain(); });
+        const removeBtn = el('button', { class: 'icon-only btn-secondary', type: 'button', 'aria-label': `Remove ${name}`, title: `Remove ${name}` }, [el('span', { class: 'material-symbols-outlined', 'aria-hidden': 'true' }, ['delete'])]);
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeDisplayInstance(key);
+            forgetDisplayStatuses(type);
+            renderSidebar();
+            renderMain();
+        });
         controls.appendChild(removeBtn);
         list.appendChild(card);
     });
     main.appendChild(list);
-    const testable = testableDisplayTypes();
+    const testable = testableDisplayKeys();
     if (testable.length) {
-        const anyPending = testable.some((t) => displayPendings[t]);
+        const anyPending = testable.some((k) => displayPendings[k]);
         const ready = testable.filter(displayFieldsFilled);
         const testAllBtn = el('button', { class: 'btn-secondary', type: 'button' }, [
             el('span', { class: 'material-symbols-outlined' + (anyPending ? ' spin' : '') }, ['refresh']),
@@ -49,32 +58,37 @@ function renderDisplaysOverview(main) {
         testAllBtn.addEventListener('click', testAllDisplays);
         main.appendChild(el('div', { class: 'add-row' }, [testAllBtn]));
     }
-    const remaining = Object.keys(DISPLAY_TYPES).filter((t) => !(t in settings.displays));
-    if (remaining.length) {
+    const addable = Object.keys(DISPLAY_TYPES).filter((t) => isMultiDisplayType(t) || !(t in settings.displays));
+    if (addable.length) {
         const addRow = el('div', { class: 'add-row' });
         const select = el('select', { 'aria-label': 'Display to add' });
-        remaining.forEach((t) => select.appendChild(el('option', { value: t }, [DISPLAY_TYPES[t].label])));
+        addable.forEach((t) => select.appendChild(el('option', { value: t }, [displayInstances(t).length ? `${DISPLAY_TYPES[t].label} (add another)` : DISPLAY_TYPES[t].label])));
         const addBtn = el('button', { class: 'btn-secondary', type: 'button' }, [el('span', { class: 'material-symbols-outlined' }, ['add']), 'Add Display']);
-        addBtn.addEventListener('click', () => { settings.displays[select.value] = {}; renderSidebar(); gotoStep('displays:' + select.value); });
+        addBtn.addEventListener('click', () => { const key = addDisplayInstance(select.value); renderSidebar(); gotoStep('displays:' + key); });
         addRow.appendChild(select);
         addRow.appendChild(addBtn);
         main.appendChild(addRow);
     }
     stepActions(main, 'displays');
 }
-function renderDisplaySubStep(main, type) {
+function renderDisplaySubStep(main, key) {
     const displayStatuses = displayStatus;
-    const isDefault = type === 'default';
-    const target = settings.displays[type];
-    main.appendChild(renderSubStepTitle(isDefault ? 'Default Display Settings' : (DISPLAY_TYPES[type] || {}).label || type, () => gotoStep('displays')));
-    appendStepIssues(main, 'displays:' + type);
+    const isDefault = key === 'default';
+    const { type } = parseDisplayKey(key);
+    const target = getDisplayConfig(key);
+    if (!target) {
+        renderDisplaysOverview(main);
+        return;
+    }
+    main.appendChild(renderSubStepTitle(isDefault ? 'Default Display Settings' : displayLabel(key), () => gotoStep('displays')));
+    appendStepIssues(main, 'displays:' + key);
     if (!isDefault && DISPLAY_HELP[type])
         main.appendChild(helpLinkEl(DISPLAY_HELP[type].text, DISPLAY_HELP[type].href));
     renderCommonDisplayFields(main, target, isDefault, type);
     if (!isDefault) {
         const cfg = DISPLAY_TYPES[type];
         if (cfg.testable)
-            ensureDisplayStatusChecked(type);
+            ensureDisplayStatusChecked(key);
         getExtraFields(type).forEach((f) => {
             const required = !!(cfg.requiredFields || []).includes(f.key);
             const hasStoredValue = Object.prototype.hasOwnProperty.call(target, f.key);
@@ -105,8 +119,8 @@ function renderDisplaySubStep(main, type) {
                 else
                     target[f.key] = value;
                 if (cfg.testable) {
-                    displayStatuses[type] = 'unknown';
-                    fillDisplayStatusEl(type);
+                    displayStatuses[key] = 'unknown';
+                    fillDisplayStatusEl(key);
                 }
                 if (f.enumValues) {
                     renderSidebar();
@@ -114,7 +128,7 @@ function renderDisplaySubStep(main, type) {
                 }
             });
             const control = (cfg.testable && f.key === 'url')
-                ? el('div', { class: 'input-with-status' }, [input, renderDisplayStatusEl(type), renderDisplayRetestButton(type), renderDisplayDetailEl(type)])
+                ? el('div', { class: 'input-with-status' }, [input, renderDisplayStatusEl(key), renderDisplayRetestButton(key), renderDisplayDetailEl(key)])
                 : input;
             const help = required ? `Required for BusyTime to activate this display. ${f.description}`.trim() : f.description;
             const row = fieldRow(f.label, help, control);

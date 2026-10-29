@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.9
-import { DAY_LABELS, DISPLAY_TYPES, TOP_LEVEL_ORDER } from './config.js?v=1.0.9';
-import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
-import { activeDisplayTypes, configuredDisplayTypes, ensureDefaults, formatOffset, hasHardErrors } from './helpers.js?v=1.0.9';
-import { hourLabel } from './schedule-step.js?v=1.0.9';
-import { gotoStep } from './sidebar.js?v=1.0.9';
-import { markClean, settings } from './state.js?v=1.0.9';
-import { el, getValidationBuckets, sortedBucketKeys, stepLabel } from './validation.js?v=1.0.9';
+// BusyTime configurator v1.0.10
+import { DAY_LABELS, TOP_LEVEL_ORDER } from './config.js?v=1.0.10';
+import { PROVIDER_TYPES } from './connection-tests.js?v=1.0.10';
+import { activeDisplayKeys, configuredDisplayKeys, displayLabel, ensureDefaults, formatOffset, getDisplayConfig, hasHardErrors } from './helpers.js?v=1.0.10';
+import { hourLabel } from './schedule-step.js?v=1.0.10';
+import { gotoStep } from './sidebar.js?v=1.0.10';
+import { markClean, settings } from './state.js?v=1.0.10';
+import { el, getValidationBuckets, sortedBucketKeys, stepLabel } from './validation.js?v=1.0.10';
 export { renderReviewSummary, renderReviewStep, downloadSettings, saveAsSettings };
 let saveStatusEl = null;
 function renderReviewSummary() {
@@ -13,7 +13,7 @@ function renderReviewSummary() {
     summary.appendChild(el('h3', { id: 'review-summary-title' }, ['Configuration summary']));
     const wifiNames = Object.keys(settings.wifis);
     const dayNames = settings.calendar_days.slice().sort().map((day) => DAY_LABELS[day]).join(', ') || 'None';
-    const displays = activeDisplayTypes().map((type) => type === 'all' ? 'All built-in displays' : ((DISPLAY_TYPES[type] || {}).label || type));
+    const displays = activeDisplayKeys().map(displayLabel);
     const providers = Object.keys(settings.calendars).map((type) => (PROVIDER_TYPES[type] || {}).label || type);
     const rows = [
         ['WiFi networks', wifiNames.length ? wifiNames.join(', ') : 'None'],
@@ -30,14 +30,14 @@ function renderReviewSummary() {
         list.appendChild(el('dd', {}, [value]));
     });
     summary.appendChild(list);
-    const configured = configuredDisplayTypes();
+    const configured = configuredDisplayKeys();
     if (configured.length) {
         summary.appendChild(el('h4', {}, ['Display overrides']));
         const overrides = el('ul', { class: 'override-summary' });
-        configured.forEach((type) => {
-            const target = settings.displays[type] || {};
-            const keys = Object.keys(target).filter((key) => !['url', 'token', 'entity_id', 'preset', 'led_count', 'name'].includes(key));
-            overrides.appendChild(el('li', {}, [`${(DISPLAY_TYPES[type] || {}).label || type}: ${keys.length ? keys.join(', ') : 'uses Default Display Settings'}`]));
+        configured.forEach((key) => {
+            const target = getDisplayConfig(key) || {};
+            const fields = Object.keys(target).filter((field) => !['url', 'token', 'entity_id', 'preset', 'led_count', 'name'].includes(field));
+            overrides.appendChild(el('li', {}, [`${displayLabel(key)}: ${fields.length ? fields.join(', ') : 'uses Default Display Settings'}`]));
         });
         summary.appendChild(overrides);
     }

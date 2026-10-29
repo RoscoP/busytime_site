@@ -1,6 +1,6 @@
-// BusyTime configurator v1.0.9
-import { getSchema } from './schema.js?v=1.0.9';
-export { TOP_LEVEL_ORDER, STEP_META, NETWORK_DISABLING_TEST_MODES, CALENDAR_OPTIONAL_TEST_MODES, DIRECT_DISPLAY_TYPES, DAY_LABELS, STATE_NAMES, STATE_DESCRIPTIONS, stateOptionLabel, STATE_DEFAULT_COLORS, EVENT_TIME_DEFAULT_COLORS, SUPPORTED_TIMEZONES, isValidTimeZone, DISPLAY_TYPES, DISPLAY_HELP, HOMEASSISTANT_TOKEN_DOCS_URL, FIELD_UI_META, schemaExtraProperties, displaySupportsLedStrip, getExtraFields, isHttpUrl, urlHasPath, appendPathIfBare, };
+// BusyTime configurator v1.0.10
+import { getSchema } from './schema.js?v=1.0.10';
+export { TOP_LEVEL_ORDER, STEP_META, NETWORK_DISABLING_TEST_MODES, CALENDAR_OPTIONAL_TEST_MODES, DIRECT_DISPLAY_TYPES, MULTI_DISPLAY_TYPES, isMultiDisplayType, DAY_LABELS, STATE_NAMES, STATE_DESCRIPTIONS, stateOptionLabel, STATE_DEFAULT_COLORS, EVENT_TIME_DEFAULT_COLORS, SUPPORTED_TIMEZONES, isValidTimeZone, DISPLAY_TYPES, DISPLAY_HELP, HOMEASSISTANT_TOKEN_DOCS_URL, FIELD_UI_META, schemaExtraProperties, displaySupportsLedStrip, getExtraFields, isHttpUrl, urlHasPath, appendPathIfBare, };
 const TOP_LEVEL_ORDER = ['wifi', 'schedule', 'displays', 'calendars', 'review'];
 const STEP_META = {
     wifi: { label: 'WiFi', icon: 'wifi' },
@@ -12,6 +12,10 @@ const STEP_META = {
 const NETWORK_DISABLING_TEST_MODES = ['lights', 'lightskey', 'rainbow'];
 const CALENDAR_OPTIONAL_TEST_MODES = ['lights', 'lightskey', 'rainbow', 'calendar'];
 const DIRECT_DISPLAY_TYPES = ['onboard', 'bff', 'littlestoplight', 'console', 'website'];
+const MULTI_DISPLAY_TYPES = ['bigstoplight', 'homeassistant', 'wled'];
+function isMultiDisplayType(type) {
+    return MULTI_DISPLAY_TYPES.includes(type);
+}
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const STATE_NAMES = ['NONE', 'TESTING', 'SETUP', 'WAITING', 'ERROR', 'IDLE', 'FREE', 'POSSIBLE', 'PENDING', 'BUSYPENDING', 'BUSY'];
 const STATE_DESCRIPTIONS = {
@@ -95,13 +99,21 @@ const FIELD_UI_META = {
     },
     website: { name: { label: 'mDNS Name', placeholder: 'busytime' } },
 };
+function displayTypeSchema(type) {
+    const schema = getSchema();
+    const node = schema.properties.displays.properties[type];
+    const instanceRef = node && node.oneOf && node.oneOf.find((branch) => branch && branch['$ref']);
+    if (!instanceRef)
+        return node;
+    return schema.$defs[String(instanceRef['$ref']).replace('#/$defs/', '')];
+}
 function schemaExtraProperties(type) {
-    const node = getSchema().properties.displays.properties[type];
+    const node = displayTypeSchema(type);
     const fragment = node && node.allOf && node.allOf.find((f) => f && f.properties && !f['$ref']);
     return (fragment && fragment.properties) || {};
 }
 function displaySupportsLedStrip(type) {
-    const node = getSchema().properties.displays.properties[type];
+    const node = displayTypeSchema(type);
     return !!(node && node.allOf && node.allOf.some((f) => f && f['$ref'] === '#/$defs/displayLedStrip'));
 }
 function getExtraFields(type) {

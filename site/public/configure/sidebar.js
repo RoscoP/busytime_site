@@ -1,16 +1,17 @@
-// BusyTime configurator v1.0.9
+// BusyTime configurator v1.0.10
 export { isStepLocked, gotoStep, unlockThrough, goNext, goBack, renderSidebar, disarmRestart, renderMain, appendStepIssues, stepActions, renderSubStepActions, resetRenderedStep };
-import { renderCalendarsOverview, renderProviderSubStep } from './calendars-step.js?v=1.0.9';
-import { STEP_META, TOP_LEVEL_ORDER, DISPLAY_TYPES } from './config.js?v=1.0.9';
-import { ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.9';
-import { renderDisplaysOverview, renderDisplaySubStep } from './displays-step.js?v=1.0.9';
-import { restartEditor } from './editor.js?v=1.0.9';
-import { ensureOauthStatusChecked } from './oauth.js?v=1.0.9';
-import { renderReviewStep } from './review-step.js?v=1.0.9';
-import { renderScheduleStep } from './schedule-step.js?v=1.0.9';
-import { currentStepId, dirty, setCurrentStepId, settings, unlocked } from './state.js?v=1.0.9';
-import { el, getValidationBuckets, stepOrDescendantHasIssue } from './validation.js?v=1.0.9';
-import { renderWifiStep } from './wifi-step.js?v=1.0.9';
+import { renderCalendarsOverview, renderProviderSubStep } from './calendars-step.js?v=1.0.10';
+import { STEP_META, TOP_LEVEL_ORDER, DISPLAY_TYPES } from './config.js?v=1.0.10';
+import { ensureDisplayStatusChecked, ensureIcsUrlChecked, PROVIDER_TYPES, } from './connection-tests.js?v=1.0.10';
+import { renderDisplaysOverview, renderDisplaySubStep } from './displays-step.js?v=1.0.10';
+import { restartEditor } from './editor.js?v=1.0.10';
+import { configuredDisplayKeys, displayLabel, parseDisplayKey } from './helpers.js?v=1.0.10';
+import { ensureOauthStatusChecked } from './oauth.js?v=1.0.10';
+import { renderReviewStep } from './review-step.js?v=1.0.10';
+import { renderScheduleStep } from './schedule-step.js?v=1.0.10';
+import { currentStepId, dirty, setCurrentStepId, settings, unlocked } from './state.js?v=1.0.10';
+import { el, getValidationBuckets, stepOrDescendantHasIssue } from './validation.js?v=1.0.10';
+import { renderWifiStep } from './wifi-step.js?v=1.0.10';
 function isStepLocked(id) {
     return !unlocked.has(id);
 }
@@ -77,13 +78,14 @@ function renderSidebar() {
         nav.appendChild(item);
         mobileSelect.appendChild(el('option', { value: id, disabled: locked ? 'disabled' : null, selected: isActive ? 'selected' : null }, [meta.label + (stepOrDescendantHasIssue(buckets, id) ? ' - issues' : '')]));
         if (id === 'displays' && !locked) {
-            const subIds = ['default', ...Object.keys(settings.displays).filter((k) => k !== 'default' && k !== 'all')];
-            subIds.forEach((sub) => {
-                const cfg = DISPLAY_TYPES[sub];
+            const displayKeys = configuredDisplayKeys();
+            displayKeys.forEach((key) => {
+                const cfg = DISPLAY_TYPES[parseDisplayKey(key).type];
                 if (cfg && cfg.testable)
-                    ensureDisplayStatusChecked(sub);
+                    ensureDisplayStatusChecked(key);
             });
-            subIds.forEach((sub) => addSubNavItem(nav, mobileSelect, 'displays:' + sub, sub === 'default' ? 'Default Display Settings' : DISPLAY_TYPES[sub]?.label || sub, buckets));
+            addSubNavItem(nav, mobileSelect, 'displays:default', 'Default Display Settings', buckets);
+            displayKeys.forEach((key) => addSubNavItem(nav, mobileSelect, 'displays:' + key, displayLabel(key), buckets));
         }
         if (id === 'calendars' && !locked) {
             Object.keys(settings.calendars).forEach((type) => {
@@ -191,7 +193,8 @@ function renderMain() {
     }
     main.innerHTML = '';
     lastRenderedStepId = currentStepId;
-    const [top, sub] = currentStepId.split(':');
+    const [top, ...subParts] = currentStepId.split(':');
+    const sub = subParts.join(':');
     if (top === 'wifi')
         renderWifiStep(main);
     else if (top === 'schedule')

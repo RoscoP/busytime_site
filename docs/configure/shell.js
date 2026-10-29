@@ -1,4 +1,4 @@
-// BusyTime configurator v1.0.9
+// BusyTime configurator v1.0.10
 export function mountShell() {
     const mount = document.getElementById('busytime-app');
     if (!mount) {

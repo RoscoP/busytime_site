@@ -103,6 +103,50 @@
         }
       }
     },
+    "bigstoplightDisplay": {
+      "allOf": [
+        { "$ref": "#/$defs/displayCommon" },
+        {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": { "type": "string", "format": "uri", "description": "URL for the big stoplight API" }
+          }
+        }
+      ],
+      "description": "One big stoplight instance"
+    },
+    "homeassistantDisplay": {
+      "allOf": [
+        { "$ref": "#/$defs/displayCommon" },
+        {
+          "type": "object",
+          "required": ["url", "token", "entity_id"],
+          "properties": {
+            "entity_id": { "type": "string", "description": "Home Assistant light entity id" },
+            "token": { "type": "string", "description": "Home Assistant long-lived access token" },
+            "url": { "type": "string", "format": "uri",                 "description": "Home Assistant server address - just the bare URL (e.g. http://homeassistant.local:8123), no path" }
+          }
+        }
+      ],
+      "description": "One Home Assistant light entity instance"
+    },
+    "wledDisplay": {
+      "allOf": [
+        { "$ref": "#/$defs/displayCommon" },
+        { "$ref": "#/$defs/displayLedStrip" },
+        {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": { "type": "string", "format": "uri",                 "description": "WLED server address - just the bare URL (e.g. http://wled.local); BusyTime adds the /json API path itself" },
+            "preset": { "type": "integer", "minimum": 0, "description": "WLED preset to use when free instead of a solid color" },
+            "led_count": { "type": "integer", "minimum": 1, "description": "Number of LEDs on the WLED strip" }
+          }
+        }
+      ],
+      "description": "One WLED server instance"
+    },
     "oauthAuth": {
       "type": "object",
       "required": ["access_token", "refresh_token"],
@@ -186,11 +230,6 @@
           "allOf": [{ "$ref": "#/$defs/displayCommon" }, { "$ref": "#/$defs/displayLedStrip" }],
           "description": "Settings applied to every display unless overridden by that display's own settings"
         },
-        "all": {
-          "type": "object",
-          "additionalProperties": true,
-          "description": "Sentinel key - if present, enables every known display type regardless of other keys"
-        },
         "onboard": {
           "allOf": [{ "$ref": "#/$defs/displayCommon" }],
           "description": "Onboard LED"
@@ -222,45 +261,25 @@
           "description": "Serial console output"
         },
         "bigstoplight": {
-          "allOf": [
-            { "$ref": "#/$defs/displayCommon" },
-            {
-              "type": "object",
-              "properties": {
-                "url": { "type": "string", "format": "uri", "description": "URL for the big stoplight API" }
-              }
-            }
+          "oneOf": [
+            { "$ref": "#/$defs/bigstoplightDisplay" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/bigstoplightDisplay" } }
           ],
-          "description": "Big physical stoplight controlled over the network (e.g. Raspberry Pi Pico)"
+          "description": "Big physical stoplight controlled over the network (e.g. Raspberry Pi Pico). One object, or an array of objects for several stoplights"
         },
         "homeassistant": {
-          "allOf": [
-            { "$ref": "#/$defs/displayCommon" },
-            {
-              "type": "object",
-              "properties": {
-                "entity_id": { "type": "string", "description": "Home Assistant light entity id" },
-                "token": { "type": "string", "description": "Home Assistant long-lived access token" },
-                "url": { "type": "string", "format": "uri",                 "description": "Home Assistant server address - just the bare URL (e.g. http://homeassistant.local:8123), no path" }
-              }
-            }
+          "oneOf": [
+            { "$ref": "#/$defs/homeassistantDisplay" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/homeassistantDisplay" } }
           ],
-          "description": "Control a Home Assistant light entity's color"
+          "description": "Control a Home Assistant light entity's color. One object, or an array of objects for several entities"
         },
         "wled": {
-          "allOf": [
-            { "$ref": "#/$defs/displayCommon" },
-            { "$ref": "#/$defs/displayLedStrip" },
-            {
-              "type": "object",
-              "properties": {
-                "url": { "type": "string", "format": "uri",                 "description": "WLED server address - just the bare URL (e.g. http://wled.local); BusyTime adds the /json API path itself" },
-                "preset": { "type": "integer", "minimum": 0, "description": "WLED preset to use when free instead of a solid color" },
-                "led_count": { "type": "integer", "minimum": 1, "description": "Number of LEDs on the WLED strip" }
-              }
-            }
+          "oneOf": [
+            { "$ref": "#/$defs/wledDisplay" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/wledDisplay" } }
           ],
-          "description": "WLED server-controlled LED strip"
+          "description": "WLED server-controlled LED strip. One object, or an array of objects for several WLED servers"
         },
         "website": {
           "allOf": [

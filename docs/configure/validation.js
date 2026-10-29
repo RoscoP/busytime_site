@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.9
-import { CALENDAR_OPTIONAL_TEST_MODES, DISPLAY_TYPES, FIELD_UI_META, isHttpUrl, isValidTimeZone, STEP_META, TOP_LEVEL_ORDER, urlHasPath } from './config.js?v=1.0.9';
-import { credDetail, credStatus, displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.9';
-import { activeDisplayTypes, configuredDisplayTypes } from './helpers.js?v=1.0.9';
-import { computeOauthDisplayState, oauthDetail } from './oauth.js?v=1.0.9';
-import { getSchema } from './schema.js?v=1.0.9';
-import { settings } from './state.js?v=1.0.9';
-import { shouldWarnWifiEmpty } from './wifi-step.js?v=1.0.9';
+// BusyTime configurator v1.0.10
+import { CALENDAR_OPTIONAL_TEST_MODES, DISPLAY_TYPES, FIELD_UI_META, isHttpUrl, isMultiDisplayType, isValidTimeZone, STEP_META, TOP_LEVEL_ORDER, urlHasPath } from './config.js?v=1.0.10';
+import { credHasCalendars, credMissingFields, displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.10';
+import { activeDisplayKeys, configuredDisplayKeys, displayKey, displayLabel, getDisplayConfig, parseDisplayKey } from './helpers.js?v=1.0.10';
+import { computeOauthDisplayState, oauthDetail } from './oauth.js?v=1.0.10';
+import { getSchema } from './schema.js?v=1.0.10';
+import { settings } from './state.js?v=1.0.10';
+import { shouldWarnWifiEmpty } from './wifi-step.js?v=1.0.10';
 export { stepIdForInstancePath, friendlyAjvMessage, prettifyInstancePath, stepLabel, getValidationBuckets, stepOrDescendantHasIssue, sortedBucketKeys, rgbToHex, hexToRgb, el, helpLinkEl, fieldRow, renderSubStepTitle, };
 let cachedAjvValidate = null;
 function getAjvValidate() {
@@ -28,10 +28,27 @@ function stepIdForInstancePath(path) {
     if (['test_mode', 'calendar_timezone_name', 'calendar_timezone_offset', 'calendar_hour_start', 'calendar_hour_end', 'calendar_days', 'pending_time'].includes(top))
         return 'schedule';
     if (top === 'displays')
-        return sub ? 'displays:' + sub : 'displays';
+        return sub ? 'displays:' + displayKeyForPath(parts) : 'displays';
     if (top === 'calendars')
         return sub ? 'calendars:' + sub : 'calendars';
     return null;
+}
+function displayKeyForPath(parts) {
+    const [, type, next] = parts;
+    if (isMultiDisplayType(type) && /^\d+$/.test(next || ''))
+        return displayKey(type, parseInt(next, 10));
+    return type;
+}
+function isDisplayOneOfNoise(err) {
+    const parts = (err.instancePath || '').split('/').filter(Boolean);
+    if (parts[0] !== 'displays' || !isMultiDisplayType(parts[1]))
+        return false;
+    if (err.keyword === 'oneOf' || err.keyword === 'required')
+        return true;
+    const inArrayBranch = (err.schemaPath || '').includes('/oneOf/1/');
+    if (Array.isArray(settings.displays[parts[1]]))
+        return parts.length === 2 && !inArrayBranch;
+    return inArrayBranch;
 }
 function friendlyAjvMessage(err) {
     const parts = (err.instancePath || '').split('/').filter(Boolean);
@@ -58,15 +75,22 @@ function friendlyAjvMessage(err) {
 function prettifyInstancePath(parts) {
     if (!parts.length)
         return '';
-    return parts.map((p, i) => {
+    const labels = [];
+    for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
         if (i === 0)
-            return (STEP_META[p] || {}).label || p;
-        if (parts[0] === 'displays' && i === 1)
-            return p === 'default' ? 'Default Display Settings' : ((DISPLAY_TYPES[p] || {}).label || p);
-        if (parts[0] === 'calendars' && i === 1)
-            return (PROVIDER_TYPES[p] || {}).label || p;
-        return p;
-    }).join(' \u2192 ');
+            labels.push((STEP_META[p] || {}).label || p);
+        else if (parts[0] === 'displays' && i === 1) {
+            labels.push(p === 'default' ? 'Default Display Settings' : displayLabel(displayKeyForPath(parts)));
+            if (isMultiDisplayType(p) && /^\d+$/.test(parts[2] || ''))
+                i++;
+        }
+        else if (parts[0] === 'calendars' && i === 1)
+            labels.push((PROVIDER_TYPES[p] || {}).label || p);
+        else
+            labels.push(p);
+    }
+    return labels.join(' \u2192 ');
 }
 function stepLabel(stepId) {
     if (stepId === 'general')
@@ -75,7 +99,7 @@ function stepLabel(stepId) {
     if (!sub)
         return (STEP_META[top] || {}).label || top;
     if (top === 'displays')
-        return sub === 'default' ? 'Default Display Settings' : ((DISPLAY_TYPES[sub] || {}).label || sub);
+        return sub === 'default' ? 'Default Display Settings' : displayLabel(stepId.slice('displays:'.length));
     if (top === 'calendars')
         return (PROVIDER_TYPES[sub] || {}).label || sub;
     return stepId;
@@ -94,7 +118,7 @@ function getValidationBuckets() {
             push('general', 'warning', 'JSON-Schema validation is unavailable because the Ajv library could not be loaded (check your network connection and reload the page). Only the built-in checks below were run.');
         }
         else if (!validate(settings)) {
-            (validate.errors || []).forEach((err) => push(stepIdForInstancePath(err.instancePath), 'error', friendlyAjvMessage(err)));
+            (validate.errors || []).filter((err) => !isDisplayOneOfNoise(err)).forEach((err) => push(stepIdForInstancePath(err.instancePath), 'error', friendlyAjvMessage(err)));
         }
     }
     catch (e) {
@@ -112,20 +136,22 @@ function getValidationBuckets() {
     if (!isValidTimeZone(settings.calendar_timezone_name)) {
         push('schedule', 'warning', `"${settings.calendar_timezone_name}" is not a recognized IANA timezone name - pick one from the list.`);
     }
-    if (!activeDisplayTypes().length) {
+    if (!activeDisplayKeys().length) {
         push('displays', 'error', 'No active display is configured. Add at least one display so BusyTime has somewhere to show its status.');
     }
-    configuredDisplayTypes().forEach((type) => {
+    configuredDisplayKeys().forEach((key) => {
+        const { type } = parseDisplayKey(key);
         const cfg = DISPLAY_TYPES[type];
         if (!cfg || !cfg.requiredFields)
             return;
-        const target = settings.displays[type] || {};
+        const target = getDisplayConfig(key) || {};
+        const label = displayLabel(key);
         if ((type === 'wled' || type === 'homeassistant') && target.url && urlHasPath(target.url)) {
-            push('displays:' + type, 'warning', `Enter just the address (e.g. ${type === 'wled' ? 'http://wled.local' : 'http://homeassistant.local:8123'}), with no path or trailing "/" - BusyTime adds the API path itself.`);
+            push('displays:' + key, 'warning', `Enter just the address (e.g. ${type === 'wled' ? 'http://wled.local' : 'http://homeassistant.local:8123'}), with no path or trailing "/" - BusyTime adds the API path itself.`);
         }
         cfg.requiredFields.forEach((field) => {
             if (!target[field])
-                push('displays:' + type, 'error', `${cfg.label} is missing ${FIELD_UI_META[type]?.[field]?.label || field}.`);
+                push('displays:' + key, 'error', `${label} is missing ${FIELD_UI_META[type]?.[field]?.label || field}.`);
         });
     });
     if (!Object.keys(settings.calendars).length && !CALENDAR_OPTIONAL_TEST_MODES.includes(settings.test_mode)) {
@@ -136,10 +162,14 @@ function getValidationBuckets() {
         const label = cfg.label || type;
         const stepId = 'calendars:' + type;
         if (cfg.testable) {
-            if (credStatus[type] === 'invalid')
-                push(stepId, 'error', `${label}: invalid username or password.`);
-            else if (credStatus[type] === 'unreachable')
-                push(stepId, 'warning', `${label}: couldn't verify the connection - ${credDetail[type] || 'check the URL/network.'}`);
+            const seen = (buckets.get(stepId) || []).map((issue) => issue.message);
+            credMissingFields(type).forEach((key) => {
+                const msg = `${label} is missing its ${key}.`;
+                if (!seen.includes(msg))
+                    push(stepId, 'error', msg);
+            });
+            if (!credHasCalendars(type))
+                push(stepId, 'error', `${label}: add at least one calendar name to monitor.`);
         }
         else if (cfg.oauth) {
             const state = computeOauthDisplayState(type);
@@ -158,16 +188,16 @@ function getValidationBuckets() {
             });
         }
     });
-    Object.keys(settings.displays).filter((k) => k !== 'default').forEach((type) => {
-        const cfg = DISPLAY_TYPES[type] || {};
+    configuredDisplayKeys().forEach((key) => {
+        const cfg = DISPLAY_TYPES[parseDisplayKey(key).type] || {};
         if (!cfg.testable)
             return;
-        const label = cfg.label || type;
-        const stepId = 'displays:' + type;
-        if (displayStatus[type] === 'invalid')
+        const label = displayLabel(key);
+        const stepId = 'displays:' + key;
+        if (displayStatus[key] === 'invalid')
             push(stepId, 'error', `${label}: responded but not with a 200-level status.`);
-        else if (displayStatus[type] === 'unreachable')
-            push(stepId, 'warning', `${label}: couldn't verify the connection - ${displayDetail[type] || 'check the URL/network.'}`);
+        else if (displayStatus[key] === 'unreachable')
+            push(stepId, 'warning', `${label}: couldn't verify the connection - ${displayDetail[key] || 'check the URL/network.'}`);
     });
     return buckets;
 }

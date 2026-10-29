@@ -1,4 +1,4 @@
-// BusyTime configurator v1.0.9
+// BusyTime configurator v1.0.10
 export let settings = null;
 export let currentStepId = 'wifi';
 export const unlocked = new Set();

@@ -1,7 +1,7 @@
-// BusyTime configurator v1.0.9
-import { DIRECT_DISPLAY_TYPES } from './config.js?v=1.0.9';
-import { settings } from './state.js?v=1.0.9';
-export { computeOffsetSeconds, formatOffset, setOffsetDisplay, ensureDefaults, configuredDisplayTypes, activeDisplayTypes, hasHardErrors, };
+// BusyTime configurator v1.0.10
+import { DIRECT_DISPLAY_TYPES, DISPLAY_TYPES, isMultiDisplayType } from './config.js?v=1.0.10';
+import { settings } from './state.js?v=1.0.10';
+export { computeOffsetSeconds, formatOffset, setOffsetDisplay, ensureDefaults, configuredDisplayTypes, activeDisplayTypes, displayKey, parseDisplayKey, displayInstances, getDisplayConfig, configuredDisplayKeys, displayLabel, addDisplayInstance, removeDisplayInstance, normalizeDisplays, activeDisplayKeys, hasHardErrors, };
 export function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -54,22 +54,85 @@ function ensureDefaults() {
         settings.displays = {};
     if (!settings.displays.default)
         settings.displays.default = {};
+    normalizeDisplays();
     if (!isPlainObject(settings.calendars))
         settings.calendars = {};
 }
 function configuredDisplayTypes() {
     return Object.keys(settings.displays || {}).filter((key) => key !== 'default' && key !== 'all');
 }
-function activeDisplayTypes() {
-    if (settings.displays && 'all' in settings.displays)
-        return ['all'];
-    return configuredDisplayTypes().filter((type) => {
+function displayKey(type, index) {
+    return index === 0 ? type : `${type}:${index}`;
+}
+function parseDisplayKey(key) {
+    const [type, index] = key.split(':');
+    return { type, index: index === undefined ? 0 : parseInt(index, 10) || 0 };
+}
+function displayInstances(type) {
+    const value = settings.displays ? settings.displays[type] : undefined;
+    if (Array.isArray(value))
+        return value;
+    return isPlainObject(value) ? [value] : [];
+}
+function getDisplayConfig(key) {
+    const { type, index } = parseDisplayKey(key);
+    const instance = displayInstances(type)[index];
+    return isPlainObject(instance) ? instance : undefined;
+}
+function configuredDisplayKeys() {
+    return configuredDisplayTypes().flatMap((type) => displayInstances(type).map((_, index) => displayKey(type, index)));
+}
+function displayLabel(key) {
+    const { type, index } = parseDisplayKey(key);
+    const label = (DISPLAY_TYPES[type] || {}).label || type;
+    return isMultiDisplayType(type) && displayInstances(type).length > 1 ? `${label} #${index + 1}` : label;
+}
+function addDisplayInstance(type) {
+    const existing = displayInstances(type);
+    if (!existing.length) {
+        settings.displays[type] = {};
+        return displayKey(type, 0);
+    }
+    if (!isMultiDisplayType(type))
+        return displayKey(type, 0);
+    const instances = Array.isArray(settings.displays[type]) ? settings.displays[type] : existing;
+    instances.push({});
+    settings.displays[type] = instances;
+    return displayKey(type, instances.length - 1);
+}
+function removeDisplayInstance(key) {
+    const { type, index } = parseDisplayKey(key);
+    const value = settings.displays[type];
+    if (!Array.isArray(value)) {
+        delete settings.displays[type];
+        return;
+    }
+    value.splice(index, 1);
+    normalizeDisplays();
+}
+function normalizeDisplays() {
+    configuredDisplayTypes().filter(isMultiDisplayType).forEach((type) => {
+        const value = settings.displays[type];
+        if (!Array.isArray(value))
+            return;
+        if (!value.length)
+            delete settings.displays[type];
+        else if (value.length === 1 && isPlainObject(value[0]))
+            settings.displays[type] = value[0];
+    });
+}
+function activeDisplayKeys() {
+    return configuredDisplayKeys().filter((key) => {
+        const { type } = parseDisplayKey(key);
         if (DIRECT_DISPLAY_TYPES.includes(type))
             return true;
-        if (['bigstoplight', 'wled', 'homeassistant'].includes(type))
-            return !!settings.displays[type].url;
+        if (isMultiDisplayType(type))
+            return !!(getDisplayConfig(key) || {}).url;
         return false;
     });
+}
+function activeDisplayTypes() {
+    return Array.from(new Set(activeDisplayKeys().map((key) => parseDisplayKey(key).type)));
 }
 function hasHardErrors(buckets) {
     for (const entries of buckets.values()) {

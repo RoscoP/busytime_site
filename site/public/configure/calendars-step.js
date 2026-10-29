@@ -1,10 +1,10 @@
-// BusyTime configurator v1.0.9
-import { isHttpUrl } from './config.js?v=1.0.9';
-import { CRED_STATE_META, CRED_VERIFY_NOTE, credState, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.9';
-import { computeOauthDisplayState, ensureOauthStatusChecked, hasTokens, OAUTH_STATE_META, renderCalendarPicker, renderOauthActions, renderOauthStatusEl, } from './oauth.js?v=1.0.9';
-import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.9';
-import { settings } from './state.js?v=1.0.9';
-import { el, fieldRow, renderSubStepTitle } from './validation.js?v=1.0.9';
+// BusyTime configurator v1.0.10
+import { isHttpUrl } from './config.js?v=1.0.10';
+import { CRED_STATE_META, CRED_VERIFY_NOTE, credState, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.10';
+import { computeOauthDisplayState, ensureOauthStatusChecked, hasTokens, OAUTH_STATE_META, renderCalendarPicker, renderOauthActions, renderOauthStatusEl, } from './oauth.js?v=1.0.10';
+import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.10';
+import { settings } from './state.js?v=1.0.10';
+import { el, fieldRow, renderSubStepTitle } from './validation.js?v=1.0.10';
 export { renderCalendarsOverview, renderProviderSubStep, chipListEl };
 function renderCalendarsOverview(main) {
     const providerTypes = PROVIDER_TYPES;
@@ -64,6 +64,10 @@ function renderProviderSubStep(main, type) {
     if (!target.calendars)
         target.calendars = [];
     const calendarNames = target.calendars;
+    const refreshCredUi = () => { if (cfg.testable) {
+        fillCredStatusEl(type);
+        renderSidebar();
+    } };
     main.appendChild(renderSubStepTitle(cfg.label || type, () => gotoStep('calendars')));
     appendStepIssues(main, 'calendars:' + type);
     if (cfg.oauth) {
@@ -89,15 +93,13 @@ function renderProviderSubStep(main, type) {
             main.appendChild(hint);
         }
         cfg.creds.forEach((key) => {
-            const resetCredStatus = () => { if (cfg.testable)
-                fillCredStatusEl(type); };
             let control;
             if (key === 'password') {
-                control = passwordFieldEl(auth[key] || '', (val) => { auth[key] = val; resetCredStatus(); });
+                control = passwordFieldEl(auth[key] || '', (val) => { auth[key] = val; refreshCredUi(); });
             }
             else {
                 const input = el('input', { type: 'text', value: auth[key] || '' });
-                input.addEventListener('input', () => { auth[key] = input.value; resetCredStatus(); });
+                input.addEventListener('input', () => { auth[key] = input.value; refreshCredUi(); });
                 control = input;
             }
             if (cfg.testable && key === 'url')
@@ -120,7 +122,8 @@ function renderProviderSubStep(main, type) {
     if (!cfg.oauth) {
         const icsStatusWrap = cfg.icsOnly ? el('div', {}) : null;
         const redrawIcsStatus = cfg.icsOnly ? () => { icsStatusWrap.innerHTML = ''; icsStatusWrap.appendChild(renderIcsStatusList(calendarNames)); } : null;
-        const chipWrap = chipListEl(calendarNames, cfg.icsOnly ? 'https://example.com/calendar.ics' : 'Calendar name', redrawIcsStatus, cfg.icsOnly ? {
+        const onChipChange = cfg.icsOnly ? redrawIcsStatus : (cfg.testable ? refreshCredUi : null);
+        const chipWrap = chipListEl(calendarNames, cfg.icsOnly ? 'https://example.com/calendar.ics' : 'Calendar name', onChipChange, cfg.icsOnly ? {
             inputType: 'url',
             validate: isHttpUrl,
             invalidMessage: 'Enter a complete HTTP or HTTPS URL.',
