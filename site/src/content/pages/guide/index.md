@@ -9,10 +9,11 @@ Setting up BusyTime takes five steps. Most people finish in a few minutes.
 1. **Prepare your calendar.** Some calendars need a one-time step first, such as sharing a work calendar or creating an app password. See [Calendar setup](/guide/calendars).
 1. **Create your settings.** Use the [Configure tool](/configure) to enter your Wi-Fi, displays, schedule and calendar accounts.
 1. **Put the settings on the device.** Save `settings.json` to the BusyTime drive. See [Device setup](/guide/device).
-1. **Check that it works.** If something looks wrong, see [Troubleshooting](/guide/troubleshooting).
+1. **Check that it works.** The light should show your current status. See [Status colors](/guide/status-colors) for what each color means, or [Troubleshooting](/guide/troubleshooting) if something looks wrong.
 
 ## Where to go next
 
 - [Device setup](/guide/device): connect BusyTime to your computer and save the settings file to it.
 - [Calendar setup](/guide/calendars): Google, a shared work calendar, or Apple Calendar.
+- [Status colors](/guide/status-colors): what each light color means.
 - [Troubleshooting](/guide/troubleshooting): fixes for common problems.

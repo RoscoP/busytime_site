@@ -3,6 +3,8 @@ title: Troubleshooting
 description: Fixes for common BusyTime setup problems.
 ---
 
+Not sure what the light is telling you? See [Status colors](/guide/status-colors). If the light pulses between blue and red, BusyTime cannot read your calendar. Check the calendar and Wi-Fi sections below.
+
 ## The calendar does not appear or shows no events
 
 - Check that the calendar name in **Calendar Providers** matches the calendar exactly.

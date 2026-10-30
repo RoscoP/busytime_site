@@ -9,12 +9,12 @@ BusyTime uses an embedded controller powered by [USB-C](https://en.wikipedia.org
   <section class="device">
     <img src="/img/pyramid.png" alt="BusyTime Pyramid" />
     <h2>BusyTime Pyramid</h2>
-    <p>A single LED lights the peak of the pyramid in the BusyTime colors.</p>
+    <p>A single LED lights the peak of the pyramid in the [BusyTime colors](/guide/status-colors).</p>
   </section>
   <section class="device">
     <img src="/img/snapfitmatrix.png" alt="BusyTime Matrix" />
     <h2>BusyTime Matrix</h2>
-    <p>An 8 × 8 matrix of LEDs shows the BusyTime colors. The number of LEDs lets BusyTime show progression from one event to the next.</p>
+    <p>An 8 × 8 matrix of LEDs shows the <a href="/guide/status-colors">BusyTime colors</a>. The number of LEDs lets BusyTime show progression from one event to the next.</p>
   </section>
 </div>
 

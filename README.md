@@ -12,19 +12,15 @@ Run from `site/`:
 * `npm run preview`: Serves the built site locally.
 * `./Build.ps1`: Builds, then replaces the contents of `docs/` with the build output. GitHub Pages serves `docs/`, so commit the result to publish.
 
-## Previewing a build
+## Previewing
 
-Pages and assets use root-relative paths (`/guide`, `/img/busytime.png`), so
-`docs/index.html` (or `site/dist/index.html`) must be opened through a local
-web server, never by double-clicking the file. Opening it directly via
-`file://` breaks the logo and every nav link, because those paths resolve
-against the filesystem root instead of the site folder.
+Pages and assets use root-relative paths (`/guide`, `/img/busytime.png`), so the output must be served over HTTP, never opened via `file://` (the logo and nav links break).
 
-To preview correctly, use one of:
+**While editing:** run `npm run dev` in `site/` and open http://localhost:4321. It rebuilds on save and hot-reloads; nothing is written to `docs/` or `dist/`.
 
-* `cd site; npm run preview` — serves the `dist/` build output.
-* `npx serve docs` — serves the committed `docs/` folder.
-* `python -m http.server` run from inside `docs/`.
+**Checking the production build:** run `npm run build`, then `npm run preview`, which serves `site/dist`. Re-run the build after each change.
+
+`docs/` is only the committed output of `./Build.ps1`. Serving it (e.g. `npx serve docs`) shows whatever was last published, not your current edits, and nothing rebuilds it.
 
 ## Editing content
 
