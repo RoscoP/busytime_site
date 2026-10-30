@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.10
-import { CALENDAR_OPTIONAL_TEST_MODES, DISPLAY_TYPES, FIELD_UI_META, isHttpUrl, isMultiDisplayType, isValidTimeZone, STEP_META, TOP_LEVEL_ORDER, urlHasPath } from './config.js?v=1.0.10';
-import { credHasCalendars, credMissingFields, displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.10';
-import { activeDisplayKeys, configuredDisplayKeys, displayKey, displayLabel, getDisplayConfig, parseDisplayKey } from './helpers.js?v=1.0.10';
-import { computeOauthDisplayState, oauthDetail } from './oauth.js?v=1.0.10';
-import { getSchema } from './schema.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
-import { shouldWarnWifiEmpty } from './wifi-step.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { CALENDAR_OPTIONAL_TEST_MODES, DISPLAY_TYPES, FIELD_UI_META, isHttpUrl, isMultiDisplayType, isValidTimeZone, STEP_META, TOP_LEVEL_ORDER, urlHasPath } from './config.js?v=1.0.11';
+import { credHasCalendars, credMissingFields, displayDetail, displayStatus, icsUrlDetail, icsUrlStatus, PROVIDER_TYPES } from './connection-tests.js?v=1.0.11';
+import { activeDisplayKeys, configuredDisplayKeys, displayKey, displayLabel, getDisplayConfig, parseDisplayKey } from './helpers.js?v=1.0.11';
+import { computeOauthDisplayState, oauthDetail } from './oauth.js?v=1.0.11';
+import { getSchema } from './schema.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
+import { shouldWarnWifiEmpty } from './wifi-step.js?v=1.0.11';
 export { stepIdForInstancePath, friendlyAjvMessage, prettifyInstancePath, stepLabel, getValidationBuckets, stepOrDescendantHasIssue, sortedBucketKeys, rgbToHex, hexToRgb, el, helpLinkEl, fieldRow, renderSubStepTitle, };
 let cachedAjvValidate = null;
 function getAjvValidate() {

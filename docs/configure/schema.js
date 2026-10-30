@@ -1,4 +1,4 @@
-// BusyTime configurator v1.0.10
+// BusyTime configurator v1.0.11
 let settingsSchema = null;
 export async function loadSchema() {
     if (settingsSchema)

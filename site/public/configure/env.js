@@ -1,4 +1,4 @@
-// BusyTime configurator v1.0.10
+// BusyTime configurator v1.0.11
 export function decodeValue(encoded) {
     if (!encoded)
         return '';

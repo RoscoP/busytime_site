@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.10
-import { DISPLAY_TYPES } from './config.js?v=1.0.10';
-import { configuredDisplayKeys, getDisplayConfig, parseDisplayKey } from './helpers.js?v=1.0.10';
-import { fetchJsonWithTimeout, rerenderProviderUi } from './oauth.js?v=1.0.10';
-import { renderMain, renderSidebar } from './sidebar.js?v=1.0.10';
-import { currentStepId, sessionEpoch, settings } from './state.js?v=1.0.10';
-import { el } from './validation.js?v=1.0.10';
-export { displayStatus, displayDetail, displayPending, displayStatusEls, displayFieldsFilled, describeFetchError, statusDetailEls, renderStatusDetailEl, setStatusDetailText, statusTitle, isMixedContentBlocked, testDisplayConnection, runDisplayTest, testableDisplayKeys, testAllDisplays, rerenderDisplayUi, ensureDisplayStatusChecked, DISPLAY_STATE_META, fillDisplayStatusEl, renderDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, forgetDisplayStatuses, PROVIDER_TYPES, credStatusEls, credFieldsFilled, credMissingFields, credHasCalendars, credState, CRED_VERIFY_NOTE, CRED_STATE_META, fillCredStatusEl, renderCredStatusEl, retestButtonEl, passwordFieldEl, icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls, resetConnectionTestState, testIcsUrl, runIcsUrlTest, ensureIcsUrlChecked, ICS_STATE_META, fillIcsUrlStatusEl, renderIcsStatusList, icsAggregateStatus, };
+// BusyTime configurator v1.0.11
+import { DISPLAY_TYPES } from './config.js?v=1.0.11';
+import { configuredDisplayKeys, getDisplayConfig, parseDisplayKey } from './helpers.js?v=1.0.11';
+import { fetchJsonWithTimeout, rerenderProviderUi } from './oauth.js?v=1.0.11';
+import { renderMain, renderSidebar } from './sidebar.js?v=1.0.11';
+import { currentStepId, sessionEpoch, settings } from './state.js?v=1.0.11';
+import { el } from './validation.js?v=1.0.11';
+export { displayStatus, displayDetail, displayPending, displayStatusEls, displayFieldsFilled, describeFetchError, statusDetailEls, renderStatusDetailEl, setStatusDetailText, statusTitle, isMixedContentBlocked, testDisplayConnection, runDisplayTest, testableDisplayKeys, testAllDisplays, rerenderDisplayUi, endpointLabel, probeEndpoint, ensureDisplayStatusChecked, DISPLAY_STATE_META, fillDisplayStatusEl, renderDisplayStatusEl, renderDisplayDetailEl, renderDisplayRetestButton, forgetDisplayStatuses, PROVIDER_TYPES, credStatusEls, credFieldsFilled, credMissingFields, credHasCalendars, credState, CRED_VERIFY_NOTE, CRED_STATE_META, fillCredStatusEl, renderCredStatusEl, retestButtonEl, passwordFieldEl, icsUrlStatus, icsUrlDetail, icsUrlPending, icsUrlStatusEls, resetConnectionTestState, testIcsUrl, runIcsUrlTest, ensureIcsUrlChecked, ICS_STATE_META, fillIcsUrlStatusEl, renderIcsStatusList, icsAggregateStatus, };
 function connDisplayMeta(key) {
     return DISPLAY_TYPES[parseDisplayKey(key).type];
 }
@@ -56,11 +56,32 @@ function isMixedContentBlocked(url) {
         return false;
     }
 }
+const MIXED_CONTENT_NOTE = 'This entry is fine; browser security prevents checking http:// addresses from an https page.';
+function endpointLabel(url) {
+    try {
+        const parsed = new URL(url);
+        return `${parsed.hostname}:${parsed.port || (parsed.protocol === 'https:' ? '443' : '80')}`;
+    }
+    catch (e) {
+        return url;
+    }
+}
+async function probeEndpoint(url, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+    }
+    finally {
+        clearTimeout(timer);
+    }
+}
 async function testDisplayConnection(key) {
     const cfg = connDisplayMeta(key);
     const { url, options } = cfg.buildTestRequest(getDisplayConfig(key) || {});
+    const endpoint = endpointLabel(url);
     if (isMixedContentBlocked(url)) {
-        displayDetail[key] = 'This page is served over https, so the browser blocks requests to http:// devices. Open the editor from a local file or http:// to test, or ignore this - the BusyTime device itself is not affected.';
+        displayDetail[key] = MIXED_CONTENT_NOTE;
         return 'unverifiable';
     }
     try {
@@ -69,22 +90,22 @@ async function testDisplayConnection(key) {
             displayDetail[key] = '';
             return 'valid';
         }
-        displayDetail[key] = `HTTP ${response.status}`;
+        displayDetail[key] = `${endpoint} answered with HTTP ${response.status}`;
         return 'invalid';
     }
     catch (e) {
         let reason = describeFetchError(e);
         if (cfg.noCorsFallback) {
             try {
-                await fetchJsonWithTimeout(url, Object.assign({}, options, { mode: 'no-cors' }), 10000);
-                displayDetail[key] = "The device answered, but the browser won't show its status.";
+                await probeEndpoint(url);
+                displayDetail[key] = `Connected to ${endpoint}, but the browser won't show the response status.`;
                 return 'reachable';
             }
             catch (e2) {
                 reason = describeFetchError(e2);
             }
         }
-        displayDetail[key] = `Your browser couldn't reach this address. It may be a wrong URL, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${reason})`;
+        displayDetail[key] = `Your browser couldn't connect to ${endpoint}. It may be a wrong address or port, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${reason})`;
         return 'unreachable';
     }
 }
@@ -136,7 +157,7 @@ const DISPLAY_STATE_META = {
     reachable: { cls: 'valid', icon: 'check_circle', text: 'Device responded (status unreadable from browser)' },
     invalid: { cls: 'invalid', icon: 'error', text: 'Responded but not OK' },
     unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify from the browser" },
-    unverifiable: { cls: 'unreachable', icon: 'info', text: "Can't be checked from this page" },
+    unverifiable: { cls: 'unknown', icon: 'info', text: 'Not verified' },
 };
 function fillDisplayStatusEl(key) {
     const wrap = displayStatusEls[key];
@@ -253,12 +274,17 @@ function resetConnectionTestState() {
     });
 }
 async function testIcsUrl(url) {
+    const endpoint = endpointLabel(url);
+    if (isMixedContentBlocked(url)) {
+        icsUrlDetail[url] = MIXED_CONTENT_NOTE;
+        return 'unverifiable';
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10000);
     try {
         const response = await fetch(url, { method: 'GET', signal: controller.signal, cache: 'no-store' });
         if (!response.ok) {
-            icsUrlDetail[url] = `HTTP ${response.status} - not found or access denied.`;
+            icsUrlDetail[url] = `${endpoint} answered with HTTP ${response.status} - not found or access denied.`;
             return 'invalid';
         }
         const text = await response.text();
@@ -270,7 +296,16 @@ async function testIcsUrl(url) {
         return 'invalid';
     }
     catch (e) {
-        icsUrlDetail[url] = `Your browser couldn't read this URL. It may be a wrong URL, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${describeFetchError(e)})`;
+        let reason = describeFetchError(e);
+        try {
+            await probeEndpoint(url);
+            icsUrlDetail[url] = `Connected to ${endpoint}, but the browser won't let the feed be read to check it.`;
+            return 'reachable';
+        }
+        catch (e2) {
+            reason = describeFetchError(e2);
+        }
+        icsUrlDetail[url] = `Your browser couldn't connect to ${endpoint}. It may be a wrong address or port, a network issue, or something the browser won't allow. BusyTime will try it from the device. (${reason})`;
         return 'unreachable';
     }
     finally {
@@ -301,8 +336,10 @@ const ICS_STATE_META = {
     unknown: { cls: 'unknown', icon: 'radio_button_unchecked', text: 'Not yet tested' },
     checking: { cls: 'checking', icon: 'sync', text: 'Checking\u2026' },
     valid: { cls: 'valid', icon: 'check_circle', text: 'Feed reachable and valid' },
+    reachable: { cls: 'valid', icon: 'check_circle', text: 'Feed host responded (contents unreadable from browser)' },
     invalid: { cls: 'invalid', icon: 'error', text: 'Not a valid .ics feed' },
     unreachable: { cls: 'unreachable', icon: 'warning', text: "Couldn't verify from the browser" },
+    unverifiable: { cls: 'unknown', icon: 'info', text: 'Not verified' },
 };
 function fillIcsUrlStatusEl(url) {
     const wrap = icsUrlStatusEls[url];
@@ -352,5 +389,9 @@ function icsAggregateStatus(urls) {
         return 'checking';
     if (statuses.every((s) => s === 'valid'))
         return 'valid';
+    if (statuses.some((s) => s === 'unverifiable'))
+        return 'unverifiable';
+    if (statuses.every((s) => s === 'valid' || s === 'reachable'))
+        return 'reachable';
     return 'unknown';
 }

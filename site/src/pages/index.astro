@@ -20,7 +20,7 @@ const { Content } = await render(entry);
     <section class="about">
       <div class="body"><Content /></div>
       <div class="demo" role="group" aria-label="BusyTime in action">
-        <video src="/img/BusyTimeDemo.mp4" width="1414" height="540" autoplay loop muted playsinline aria-label="Pyramid light changing color as the calendar events shown beside it start and end"></video>
+        <img src="/img/BusyTimeDemo.webp" width="1414" height="540" alt="Pyramid light changing color as the calendar events shown beside it start and end" />
         <p>The pyramid light changes color as your day unfolds.</p>
         <p>Colors follow the events on your calendar.</p>
       </div>
@@ -46,8 +46,8 @@ const { Content } = await render(entry);
   .body :global(p:first-child) { order: 1; }
   .body :global(p:not(:first-child)) { order: 3; }
   .links { order: 4; }
-  /* One video holds both animations so they share a single clock */
-  .demo video { grid-column: 1 / -1; display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+  /* One animated WebP holds both animations so they share a single clock */
+  .demo img { grid-column: 1 / -1; display: block; width: 100%; height: auto; }
   .demo p { margin: 8px 12px 0 0; font-size: 0.85rem; color: var(--muted); }
   @media (max-width: 700px) {
     .intro { grid-template-columns: 1fr; gap: 24px; }

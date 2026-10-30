@@ -1,9 +1,9 @@
-// BusyTime configurator v1.0.10
-import { DAY_LABELS, isValidTimeZone } from './config.js?v=1.0.10';
-import { computeOffsetSeconds, setOffsetDisplay } from './helpers.js?v=1.0.10';
-import { renderMain, renderSidebar, stepActions } from './sidebar.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
-import { el, fieldRow } from './validation.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { DAY_LABELS, isValidTimeZone } from './config.js?v=1.0.11';
+import { computeOffsetSeconds, setOffsetDisplay } from './helpers.js?v=1.0.11';
+import { renderMain, renderSidebar, stepActions } from './sidebar.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
+import { el, fieldRow } from './validation.js?v=1.0.11';
 export { renderScheduleStep, renderHoursRange, hourFormatter, hourLabel, hourTickLabel };
 function renderScheduleStep(main) {
     main.appendChild(el('h2', { class: 'step-title' }, ['General & Schedule']));

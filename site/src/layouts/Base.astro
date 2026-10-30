@@ -25,6 +25,15 @@ const nav = [
     <slot name="head" />
     <title>{title}</title>
     <script is:inline>
+      // Runs before first paint to avoid a flash: saved choice, else the OS preference.
+      (function () {
+        var t;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script is:inline>
       // Analytics only on the production host, so local previews are not counted.
       if (location.hostname === 'busytime.org') {
         var s = document.createElement('script');
@@ -46,8 +55,27 @@ const nav = [
         <nav aria-label="Primary">
           {nav.map((n) => <a href={n.href} aria-current={path === n.href ? 'page' : undefined}>{n.label}</a>)}
         </nav>
+        <button type="button" id="theme-toggle" aria-label="Switch to dark mode" title="Toggle light/dark mode"></button>
       </div>
     </header>
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var btn = document.getElementById('theme-toggle');
+        function sync() {
+          var dark = root.dataset.theme === 'dark';
+          btn.textContent = dark ? '☀' : '☾';
+          btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+        btn.addEventListener('click', function () {
+          var next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          try { localStorage.setItem('theme', next); } catch (e) {}
+          sync();
+        });
+        sync();
+      })();
+    </script>
     <slot />
     <footer>
       <div class="inner">
@@ -82,6 +110,23 @@ const nav = [
     --error-bg: #fdecea;
     --measure: 60ch;
     --page-width: 960px;
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    --text: #e6eaf0;
+    --muted: #9aa5b4;
+    --line: #333c48;
+    --bg: #14181e;
+    --alt: #1e242c;
+    --link: #6cb0f0;
+    --link-hover: #9cc9f6;
+    --success: #6fd283;
+    --success-bg: #14301b;
+    --warning: #f0b45a;
+    --warning-bg: #38280d;
+    --error: #f2877f;
+    --error-bg: #3a1815;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body {
@@ -119,7 +164,7 @@ const nav = [
   }
   .brand:hover { color: var(--text); }
   .brand img { width: 24px; height: 24px; }
-  header nav { display: flex; gap: 24px; }
+  header nav { display: flex; gap: 24px; margin-left: auto; }
   header nav a {
     color: var(--text);
     text-decoration: none;
@@ -129,6 +174,17 @@ const nav = [
   }
   header nav a:hover,
   header nav a[aria-current] { border-bottom-color: var(--text); }
+  #theme-toggle {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 6px 10px;
+  }
+  #theme-toggle:hover { border-color: var(--text); }
   footer { border-top: 1px solid var(--line); margin-top: 72px; color: var(--muted); font-size: 0.9rem; }
   footer .inner { min-height: 72px; flex-wrap: wrap; gap: 8px 24px; }
   footer a { color: var(--muted); }

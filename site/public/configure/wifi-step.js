@@ -1,9 +1,9 @@
-// BusyTime configurator v1.0.10
-import { NETWORK_DISABLING_TEST_MODES } from './config.js?v=1.0.10';
-import { markDirtyAndRefreshSidebar } from './editor.js?v=1.0.10';
-import { renderMain, stepActions } from './sidebar.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
-import { el, fieldRow } from './validation.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { NETWORK_DISABLING_TEST_MODES } from './config.js?v=1.0.11';
+import { markDirtyAndRefreshSidebar } from './editor.js?v=1.0.11';
+import { renderMain, stepActions } from './sidebar.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
+import { el, fieldRow } from './validation.js?v=1.0.11';
 export { renderWifiStep, shouldWarnWifiEmpty };
 function renderWifiStep(main) {
     main.appendChild(el('h2', { class: 'step-title' }, ['WiFi']));

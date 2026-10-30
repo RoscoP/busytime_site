@@ -1,6 +1,6 @@
-// BusyTime configurator v1.0.10
-import { DIRECT_DISPLAY_TYPES, DISPLAY_TYPES, isMultiDisplayType } from './config.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { DIRECT_DISPLAY_TYPES, DISPLAY_TYPES, isMultiDisplayType } from './config.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
 export { computeOffsetSeconds, formatOffset, setOffsetDisplay, ensureDefaults, configuredDisplayTypes, activeDisplayTypes, displayKey, parseDisplayKey, displayInstances, getDisplayConfig, configuredDisplayKeys, displayLabel, addDisplayInstance, removeDisplayInstance, normalizeDisplays, activeDisplayKeys, hasHardErrors, };
 export function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);

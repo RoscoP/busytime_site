@@ -1,11 +1,11 @@
-// BusyTime configurator v1.0.10
-import { isMultiDisplayType, TOP_LEVEL_ORDER } from './config.js?v=1.0.10';
-import { resetConnectionTestState } from './connection-tests.js?v=1.0.10';
-import { ensureDefaults, isPlainObject } from './helpers.js?v=1.0.10';
-import { resetOauthState } from './oauth.js?v=1.0.10';
-import { isSchemaLoaded } from './schema.js?v=1.0.10';
-import { disarmRestart, renderMain, renderSidebar, resetRenderedStep } from './sidebar.js?v=1.0.10';
-import { bumpSessionEpoch, markClean, setCurrentStepId, setSettings, settings, unlocked, updateDirty } from './state.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { isMultiDisplayType, TOP_LEVEL_ORDER } from './config.js?v=1.0.11';
+import { resetConnectionTestState } from './connection-tests.js?v=1.0.11';
+import { ensureDefaults, isPlainObject } from './helpers.js?v=1.0.11';
+import { resetOauthState } from './oauth.js?v=1.0.11';
+import { isSchemaLoaded } from './schema.js?v=1.0.11';
+import { disarmRestart, renderMain, renderSidebar, resetRenderedStep } from './sidebar.js?v=1.0.11';
+import { bumpSessionEpoch, markClean, setCurrentStepId, setSettings, settings, unlocked, updateDirty } from './state.js?v=1.0.11';
 function enterWizard(isLoaded) {
     ensureDefaults();
     document.getElementById('gate').hidden = true;

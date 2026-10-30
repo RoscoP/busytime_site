@@ -1,10 +1,10 @@
-// BusyTime configurator v1.0.10
-import { DISPLAY_HELP, DISPLAY_TYPES, displaySupportsLedStrip, EVENT_TIME_DEFAULT_COLORS, getExtraFields, HOMEASSISTANT_TOKEN_DOCS_URL, isMultiDisplayType, STATE_DEFAULT_COLORS, STATE_DESCRIPTIONS, STATE_NAMES, stateOptionLabel, } from './config.js?v=1.0.10';
-import { DISPLAY_STATE_META, displayDetail, displayFieldsFilled, displayPending, displayStatus, ensureDisplayStatusChecked, fillDisplayStatusEl, forgetDisplayStatuses, renderDisplayDetailEl, renderDisplayRetestButton, renderDisplayStatusEl, statusTitle, testableDisplayKeys, testAllDisplays, } from './connection-tests.js?v=1.0.10';
-import { addDisplayInstance, configuredDisplayKeys, displayInstances, displayLabel, getDisplayConfig, parseDisplayKey, removeDisplayInstance, } from './helpers.js?v=1.0.10';
-import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
-import { el, fieldRow, helpLinkEl, hexToRgb, renderSubStepTitle, rgbToHex } from './validation.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { DISPLAY_HELP, DISPLAY_TYPES, displaySupportsLedStrip, EVENT_TIME_DEFAULT_COLORS, getExtraFields, HOMEASSISTANT_TOKEN_DOCS_URL, isMultiDisplayType, STATE_DEFAULT_COLORS, STATE_DESCRIPTIONS, STATE_NAMES, stateOptionLabel, } from './config.js?v=1.0.11';
+import { DISPLAY_STATE_META, displayDetail, displayFieldsFilled, displayPending, displayStatus, ensureDisplayStatusChecked, fillDisplayStatusEl, forgetDisplayStatuses, renderDisplayDetailEl, renderDisplayRetestButton, renderDisplayStatusEl, statusTitle, testableDisplayKeys, testAllDisplays, } from './connection-tests.js?v=1.0.11';
+import { addDisplayInstance, configuredDisplayKeys, displayInstances, displayLabel, getDisplayConfig, parseDisplayKey, removeDisplayInstance, } from './helpers.js?v=1.0.11';
+import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
+import { el, fieldRow, helpLinkEl, hexToRgb, renderSubStepTitle, rgbToHex } from './validation.js?v=1.0.11';
 export { renderDisplaysOverview, renderDisplaySubStep, renderBrightnessRow, renderCommonDisplayFields, booleanSettingRow, renderColorsSection, colorPickerEl };
 function renderDisplaysOverview(main) {
     const displayStateMeta = DISPLAY_STATE_META;

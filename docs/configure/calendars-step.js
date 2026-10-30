@@ -1,10 +1,10 @@
-// BusyTime configurator v1.0.10
-import { isHttpUrl } from './config.js?v=1.0.10';
-import { CRED_STATE_META, CRED_VERIFY_NOTE, credState, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.10';
-import { computeOauthDisplayState, ensureOauthStatusChecked, hasTokens, OAUTH_STATE_META, renderCalendarPicker, renderOauthActions, renderOauthStatusEl, } from './oauth.js?v=1.0.10';
-import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.10';
-import { settings } from './state.js?v=1.0.10';
-import { el, fieldRow, renderSubStepTitle } from './validation.js?v=1.0.10';
+// BusyTime configurator v1.0.11
+import { isHttpUrl } from './config.js?v=1.0.11';
+import { CRED_STATE_META, CRED_VERIFY_NOTE, credState, ensureIcsUrlChecked, fillCredStatusEl, ICS_STATE_META, icsAggregateStatus, passwordFieldEl, PROVIDER_TYPES, renderCredStatusEl, renderIcsStatusList, } from './connection-tests.js?v=1.0.11';
+import { computeOauthDisplayState, ensureOauthStatusChecked, hasTokens, OAUTH_STATE_META, renderCalendarPicker, renderOauthActions, renderOauthStatusEl, } from './oauth.js?v=1.0.11';
+import { appendStepIssues, gotoStep, renderMain, renderSidebar, renderSubStepActions, stepActions } from './sidebar.js?v=1.0.11';
+import { settings } from './state.js?v=1.0.11';
+import { el, fieldRow, renderSubStepTitle } from './validation.js?v=1.0.11';
 export { renderCalendarsOverview, renderProviderSubStep, chipListEl };
 function renderCalendarsOverview(main) {
     const providerTypes = PROVIDER_TYPES;
